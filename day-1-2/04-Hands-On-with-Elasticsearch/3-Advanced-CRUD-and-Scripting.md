@@ -40,7 +40,7 @@ Elasticsearch auto-generates the ID when you use `POST`.
 ```json
 PUT movies/_doc/1
 {
-  "tweet": "Elasticsearch in Action 2e is here!"
+  "tweet": "My Elasticsearch-ELK Stack 2e is here!"
 }
 ```
 
@@ -398,7 +398,7 @@ POST _bulk
 ```json
 POST _bulk
 {"index": {"_index": "books"}}
-{"title": "Elasticsearch in Action"}
+{"title": "My Elasticsearch-ELK Stack"}
 {"create": {"_index": "flights", "_id": "101"}}
 {"title": "London to Bucharest"}
 {"index": {"_index": "pets"}}
