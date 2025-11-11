@@ -1,0 +1,53 @@
+echo "--- 1. INSTALL JAVA DEPENDENCY ---"
+# Update system and install OpenJDK 21 (required dependency)
+sudo dnf update -y
+sudo dnf install java-21-openjdk -y
+
+echo "--- 2. IMPORT GPG KEY ---"
+# Import the Elastic GPG key for package verification
+sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+
+echo "--- 3. CREATE ELASTIC REPOSITORY FILE ---"
+# Create the repository configuration file
+
+sudo tee /etc/yum.repos.d/elasticsearch.repo << EOF
+[elasticsearch]
+name=Elasticsearch repository for 9.x packages
+baseurl=https://artifacts.elastic.co/packages/9.x/yum
+gpgcheck=1
+gpgkey=https://artifacts.elastic.co/GPG-KEY-elasticsearch
+enabled=1
+autorefresh=1
+type=rpm-md
+EOF
+
+echo "--- 4. INSTALL ELASTICSEARCH ---"
+
+# Install Elasticsearch. !!! IMPORTANT: Copy the 'elastic' superuser password output during this step. !!!
+sudo dnf install elasticsearch -y
+
+echo "--- 5. CONFIGURE NETWORK HOST ---"
+
+# Configure network host to allow connections from any interface (0.0.0.0)
+# This assumes a standard single-node setup where external access is needed.
+# NOTE: This only modifies the first instance of network.host
+sudo sed -i '0,/^#network.host: .*$/s//network.host: 0.0.0.0/' /etc/elasticsearch/elasticsearch.yml
+
+echo "--- 6. START AND ENABLE SERVICE ---"
+
+# Reload systemd and start the service, enabling it to start on boot
+sudo systemctl daemon-reload
+sudo systemctl enable --now elasticsearch
+
+echo "--- 7. CONFIGURE FIREWALL ---"
+
+# Open the default Elasticsearch port (9200)
+sudo firewall-cmd --permanent --add-port=9200/tcp
+sudo firewall-cmd --reload
+
+echo "--- ELASTICSEARCH INSTALLATION COMPLETE ---"
+echo "--- REMINDER: ---"
+echo "You MUST manually retrieve the 'elastic' superuser password from the installation output."
+echo "Verify connectivity using the command below, substituting YOUR_PASSWORD:"
+echo 'export ES_CA_CERT="/etc/elasticsearch/certs/http_ca.crt"'
+echo 'curl --cacert $ES_CA_CERT -u elastic "https://localhost:9200"'
