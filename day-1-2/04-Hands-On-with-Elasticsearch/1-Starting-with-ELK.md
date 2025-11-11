@@ -1,6 +1,4 @@
-# 🧠 Beginner’s Hands-On to the Elastic Stack
-
-### **Introduction to Elasticsearch & Kibana (Elastic 9.x Compatible)**
+# Beginner’s Elastic Stack
 
 ---
 
@@ -295,7 +293,7 @@ Now that you know the fundamentals, complete the following challenge in your Kib
 
 ---
 
-## 🧠 Bonus: Useful Commands for Exploration
+## Useful Commands for Exploration
 
 ### Get List of All Indices
 
