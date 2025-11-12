@@ -127,8 +127,8 @@ PUT /_index_template/orders
 
 ## Import data
 ```
-curl -k -u elastic -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@orders.bulk.ndjson"
-curl -k -u elastic -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@nginx-access-logs-2020-01.bulk.ndjson"
-curl -k -u elastic -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@nginx-access-logs-2020-02.bulk.ndjson"
-curl -k -u elastic -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@nginx-access-logs-2020-03.bulk.ndjson"
+curl -u atin.gupta -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@orders.bulk.ndjson"
+curl -u atin.gupta -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@nginx-access-logs-2020-01.bulk.ndjson"
+curl -u atin.gupta -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@nginx-access-logs-2020-02.bulk.ndjson"
+curl -u atin.gupta -H "Content-Type:application/x-ndjson" -XPOST https://localhost:9200/_bulk --data-binary "@nginx-access-logs-2020-03.bulk.ndjson"
 ```
