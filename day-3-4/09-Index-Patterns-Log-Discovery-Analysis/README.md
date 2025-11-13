@@ -84,7 +84,7 @@ When you search this `access-logs*` pattern in Kibana, it intelligently searches
 
 This lab will demonstrate *why* a single wildcard pattern is superior to managing multiple, fixed-name patterns.
 
-#### 🚀 Lab 1: Setup - Create Two Time-Based Indices
+####  Lab 1: Setup - Create Two Time-Based Indices
 
 First, we must create two separate, time-based indices to simulate a real environment.
 
@@ -117,7 +117,7 @@ PUT /practice-logs-2025-02
 
   * **Result:** You now have two distinct indices, `practice-logs-2025-01` and `practice-logs-2025-02`.
 
-#### 🚀 Lab 2: The "Wrong" Way (Fixed, Manual Patterns)
+####  Lab 2: The "Wrong" Way (Fixed, Manual Patterns)
 
 Let's see what happens if we don't use the wildcard.
 
@@ -133,7 +133,7 @@ Let's see what happens if we don't use the wildcard.
 
 **Analyze the Problem:** You now have two separate index patterns. Go to **Discover**. In the top-left dropdown, you can see `practice-logs-2025-01` and `practice-logs-2025-02`. To search data for *both* January and February, you would have to run your query, switch patterns, and run the *exact same query* again. This is unmanageable.
 
-#### 🚀 Lab 3: The "Right" Way (Time-Based Wildcard Pattern)
+####  Lab 3: The "Right" Way (Time-Based Wildcard Pattern)
 
 1.  **Action: Clean Up:** Go back to **Stack Management** -\> **Index Patterns**.
 2.  Click the checkbox next to `practice-logs-2025-01` and `practice-logs-2025-02`.
@@ -147,7 +147,7 @@ Let's see what happens if we don't use the wildcard.
 
 **Analyze the Solution:** Go to **Discover**. You now have *one* index pattern, `practice-logs-*`. When you select this, you are searching *both* indices at the same time. If you were to add `practice-logs-2025-03` next month, this pattern would *automatically* include it without any new configuration.
 
-#### 🚀 Lab 4: Final Cleanup
+####  Lab 4: Final Cleanup
 
 1.  **Action:** Go to **Stack Management** -\> **Index Patterns** and delete the `practice-logs-*` pattern.
 2.  **Action:** Go to **Dev Tools** and delete the practice indices.
@@ -183,7 +183,7 @@ This lab will walk through the creation of two separate index patterns, one for 
 
 **Prerequisite:** You must have already loaded your `access-logs` and `orders` data and index templates into Elasticsearch.
 
-#### 🚀 Lab 1: Creating the `access-logs*` Index Pattern
+####  Lab 1: Creating the `access-logs*` Index Pattern
 
 This pattern is designed to match all time-based `access-logs` indices, such as `access-logs-2020-01`, `access-logs-2020-02`, etc.
 
@@ -214,7 +214,7 @@ This pattern is designed to match all time-based `access-logs` indices, such as 
 **Verification:**
 You will be redirected to the `access-logs*` schema page. This screen lists all 27 fields from your `access-logs` template, such as `client.ip`, `http.response.status_code`, and `user_agent.original`. You have successfully created your first index pattern.
 
-#### 🚀 Lab 2: Creating the `orders*` Index Pattern
+####  Lab 2: Creating the `orders*` Index Pattern
 
 This process demonstrates how to manage a second, completely separate data source.
 
@@ -238,7 +238,7 @@ This process demonstrates how to manage a second, completely separate data sourc
 **Verification:**
 You will be redirected to the `orders*` schema page. This screen now lists all the *business* fields from your `orders` template, such as `product.price`, `customer.name`, and `total`.
 
-#### 🚀 Lab 3: Using the Index Pattern Selector
+####  Lab 3: Using the Index Pattern Selector
 You have now successfully registered both of your data sources with Kibana.
 
 1.  Navigate to **Discover** (☰ -> Analytics -> Discover).
@@ -267,7 +267,7 @@ The **Index Patterns** management screen (in Stack Management) is your central h
 
 **Prerequisite:** You must have the `access-logs*` and `orders*` index patterns created from the previous lab.
 
-#### 🚀 Lab 1: Navigate and Set the Default Pattern
+####  Lab 1: Navigate and Set the Default Pattern
 
 1.  **Action:** Navigate to **Stack Management** (☰ -\> Management -\> Stack Management).
 2.  **Action:** Click **Index Patterns** (under Kibana).
@@ -279,7 +279,7 @@ The **Index Patterns** management screen (in Stack Management) is your central h
       * **Result:** The page will load *automatically* with the `orders*` index pattern.
 7.  **Action:** Go back to **Stack Management** -\> **Index Patterns** and set the default back to `access-logs*`.
 
-#### 🚀 Lab 2: Refreshing an Index Pattern (The "My new field is missing" problem)
+####  Lab 2: Refreshing an Index Pattern (The "My new field is missing" problem)
 
 This lab simulates a production scenario where a developer has added a new field to the logs.
 
@@ -320,7 +320,7 @@ This lab simulates a production scenario where a developer has added a new field
       * **Action:** Look at the **Field List** on the left.
       * **Result:** The `http.request.tracking_id` field is now visible and ready for use in queries.
 
-#### 🚀 Lab 3: Safely Deleting an Index Pattern
+####  Lab 3: Safely Deleting an Index Pattern
 
 This lab will prove that deleting a pattern is non-destructive.
 
@@ -379,7 +379,7 @@ Understanding these pitfalls is key to becoming a proficient Kibana administrato
 **The Problem:** You create an index pattern but do not select a `@timestamp` field.
 **The Symptom:** The Global Time Picker in Discover and on your dashboards will be disabled or will not work, forcing you to write all time-range queries manually.
 
-#### 🚀 Lab 1: Simulating the "No Time Field" Mistake
+####  Lab 1: Simulating the "No Time Field" Mistake
 
 1.  **Action (Setup):** Go to **Dev Tools** and create a simple test index.
 
@@ -415,7 +415,7 @@ Understanding these pitfalls is key to becoming a proficient Kibana administrato
 
 11. **Conclusion:** You have successfully created the pattern, but it is "crippled." You cannot filter by time, and the histogram is missing.
 
-#### 🚀 Lab 2: Fixing the "No Time Field" Mistake
+####  Lab 2: Fixing the "No Time Field" Mistake
 
 You *cannot* add a time field to an existing pattern. You must delete and recreate it.
 
@@ -436,7 +436,7 @@ You *cannot* add a time field to an existing pattern. You must delete and recrea
 **The Problem:** You have time-based indices (e.g., `access-logs-2020-01`, `access-logs-2020-02`) but you create a pattern for *only one* of them.
 **The Symptom:** Your dashboards and Discover searches will mysteriously "lose" data. You'll search for data from February, but Kibana will show "No results found" because it's *only* configured to look at the January index.
 
-#### 🚀 Lab 3: Simulating the "Missing Wildcard" Mistake
+####  Lab 3: Simulating the "Missing Wildcard" Mistake
 
 1.  **Action (The Mistake):** Go to **Stack Management** -\> **Index Patterns** -\> **Create index pattern**.
 2.  **Name:** `access-logs-2020-01` (Type the *full, exact* name of *one* of your indices. Do **NOT** use a wildcard).
@@ -449,7 +449,7 @@ You *cannot* add a time field to an existing pattern. You must delete and recrea
 9.  **Action (The Failure):** Now, change the **Time Picker** to `February 1, 2020` to `February 28, 2020`.
 10. **Analyze the Result:** **"No results found."** Even though your `access-logs-2020-02` index *exists* and has data, your pattern is *not looking at it*. You have "siloed" yourself to only the January data.
 
-#### 🚀 Lab 4: Fixing the "Missing Wildcard" Mistake
+####  Lab 4: Fixing the "Missing Wildcard" Mistake
 
 You must delete the bad pattern and create the correct one.
 
@@ -471,7 +471,7 @@ You must delete the bad pattern and create the correct one.
 **The Problem:** You try to create a pattern, but Kibana can't find any matching indices.
 **The Symptom:** The "Create index pattern" screen shows "No matching indices found."
 
-#### 🚀 Lab 5: Simulating the "Typo" Mistake
+####  Lab 5: Simulating the "Typo" Mistake
 
 1.  **Action (The Mistake):** Go to **Stack Management** -\> **Index Patterns** -\> **Create index pattern**.
 
@@ -483,7 +483,7 @@ You must delete the bad pattern and create the correct one.
 
 5.  **The Fix:** Correct the typo in the text box to `access-logs*`. The error will disappear, and the "Success\!" message will appear.
 
-#### 🚀 Lab 6: Simulating the "Data Not Loaded" Mistake
+####  Lab 6: Simulating the "Data Not Loaded" Mistake
 
 This is the single most common "mistake" for first-time users.
 

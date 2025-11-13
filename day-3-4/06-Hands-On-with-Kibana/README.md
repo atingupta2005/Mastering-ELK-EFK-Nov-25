@@ -49,7 +49,7 @@ During creation, Kibana will ask you to select a **Time field**. This is the *se
 1.  Your `access-logs` index template has been loaded via Dev Tools.
 2.  Your `access-logs-2020-01`, `...-02`, and `...-03` bulk data has been loaded.
 
-#### 🚀 Lab 1: Navigating to Index Pattern Management
+####  Lab 1: Navigating to Index Pattern Management
 
 1.  In Kibana, click the main navigation menu (☰) in the top-left corner.
 2.  Scroll *all the way down* to the **Management** section.
@@ -57,7 +57,7 @@ During creation, Kibana will ask you to select a **Time field**. This is the *se
 4.  On the next screen, look on the left-hand side. Under the "Kibana" heading, click **Index Patterns**.
 5.  You will see a screen that says "You have no index patterns." Let's fix that.
 
-#### 🚀 Lab 2: Defining the Index Pattern
+####  Lab 2: Defining the Index Pattern
 
 
 1.  Click the **Create index pattern** button (top-right).
@@ -76,7 +76,7 @@ During creation, Kibana will ask you to select a **Time field**. This is the *se
     * Leave "Show advanced settings" alone for now.
     * Click **Create index pattern**.
 
-#### 🚀 Lab 3: Exploring the Index Pattern Schema
+####  Lab 3: Exploring the Index Pattern Schema
 
 **Success!** You will not see a success message. Instead, you will be taken directly to the **`access-logs*` schema viewer page**. This page is your "Card Catalog" made manifest.
 
@@ -208,9 +208,9 @@ KQL is the simple, powerful language you type in the search bar. It's designed t
 
 ### 3. Extensive Hands-On Lab: Searching the `access-logs` Data
 
-This is the core of your Day 2 lab. We will run a series of "search drills" to find specific data in your `access-logs*` index.
+We will run a series of "search drills" to find specific data in your `access-logs*` index.
 
-#### 🚀 Prerequisite Step 0: Set the Stage!
+####  Prerequisite Step 0: Set the Stage!
 
 1.  Navigate to **Discover** (☰ -> Analytics -> Discover).
 2.  In the top-left, make sure your index pattern is set to **`access-logs*`**.
@@ -223,7 +223,7 @@ This is the core of your Day 2 lab. We will run a series of "search drills" to f
 
 ---
 
-#### 🚀 Lab 1: Free-Text and Phrase Searches
+####  Lab 1: Free-Text and Phrase Searches
 
 **Objective:** To perform "Google-like" searches on your `text` fields.
 
@@ -244,7 +244,7 @@ This is the core of your Day 2 lab. We will run a series of "search drills" to f
 
 ---
 
-#### 🚀 Lab 2: Field-Based `keyword` Searches (The "Filter")
+####  Lab 2: Field-Based `keyword` Searches (The "Filter")
 
 **Objective:** To perform precise, fast, and professional searches using your `keyword` fields.
 
@@ -265,7 +265,7 @@ This is the core of your Day 2 lab. We will run a series of "search drills" to f
 
 ---
 
-#### 🚀 Lab 3: Field-Based `numeric` Searches (Status & Size)
+####  Lab 3: Field-Based `numeric` Searches (Status & Size)
 
 **Objective:** To use numeric fields to find errors and measure impact.
 
@@ -291,7 +291,7 @@ This is the core of your Day 2 lab. We will run a series of "search drills" to f
 
 ---
 
-#### 🚀 Lab 4: Combined Searches (AND/OR/NOT/Grouping)
+####  Lab 4: Combined Searches (AND/OR/NOT/Grouping)
 
 **Objective:** To solve real-world problems by combining queries.
 
@@ -317,7 +317,7 @@ This is the core of your Day 2 lab. We will run a series of "search drills" to f
 
 ---
 
-#### 🚀 Lab 5: Exists Searches
+####  Lab 5: Exists Searches
 
 **Objective:** To find documents based on whether a field *has* a value or not.
 
@@ -333,7 +333,7 @@ This is the core of your Day 2 lab. We will run a series of "search drills" to f
 
 ---
 
-#### 🚀 Lab 6: Exploring the Document Table
+####  Lab 6: Exploring the Document Table
 
 **Objective:** To customize your view to make the data more readable.
 
@@ -433,7 +433,7 @@ Kibana gives you multiple "point-and-click" ways to add a filter. We will practi
 
 ---
 
-#### 🚀 Lab 1: The Title Task (Filter for `status = 404`)
+####  Lab 1: The Title Task (Filter for `status = 404`)
 
 We will find all `404` logs using all three methods.
 
@@ -463,7 +463,7 @@ We will find all `404` logs using all three methods.
 
 ---
 
-#### 🚀 Lab 2: Mastering Positive & Negative Filters (`is` / `is not`)
+####  Lab 2: Mastering Positive & Negative Filters (`is` / `is not`)
 
 Let's solve a real problem: "Why are `Chrome` users having a bad experience?"
 
@@ -482,7 +482,7 @@ Let's solve a real problem: "Why are `Chrome` users having a bad experience?"
 
 ---
 
-#### 🚀 Lab 3: Mastering `exists` / `does not exist` Filters
+####  Lab 3: Mastering `exists` / `does not exist` Filters
 
 Let's solve another problem: "Which of our traffic is anonymous vs. which is from a known referrer?"
 
@@ -502,7 +502,7 @@ Let's solve another problem: "Which of our traffic is anonymous vs. which is fro
 
 ---
 
-#### 🚀 Lab 4: The Power Workflow (KQL + Filters)
+####  Lab 4: The Power Workflow (KQL + Filters)
 
 **Problem:** "A manager wants to know if any of our *admin* users are running into `404` errors."
 
@@ -607,7 +607,7 @@ There are two primary, critical reasons:
 
 ---
 
-#### 🚀 Lab 1: Save a Simple "Finder" Search
+####  Lab 1: Save a Simple "Finder" Search
 
 **Objective:** To save a common query that we will re-use for daily checks.
 
@@ -630,7 +630,7 @@ There are two primary, critical reasons:
 
 ---
 
-#### 🚀 Lab 2: Save a "Report View" (Query + Columns + Sort)
+####  Lab 2: Save a "Report View" (Query + Columns + Sort)
 
 **Objective:** To prove that a Saved Search saves *more* than just the query. It saves the entire *view*.
 
@@ -652,7 +652,7 @@ There are two primary, critical reasons:
     * **Action:** Click **Save** in the top bar.
     * **Title:** `[VIEW] - Large Downloads (by Size)`
     * **Action:** Click **Save**.
-5.  **Test the "View" (The "A-ha" Moment):**
+5.  **Test the "View"**
     * **Action:** Click **Open**. First, click `[SEARCH] - All 5xx Server Errors`.
     * **Result:** You see the 5xx query and the *default* table columns.
     * **Action:** Now, click **Open** again. Click `[VIEW] - Large Downloads (by Size)`.
@@ -660,7 +660,7 @@ There are two primary, critical reasons:
 
 ---
 
-#### 🚀 Lab 3: Save a "Combined" Search (KQL + Filters)
+####  Lab 3: Save a "Combined" Search (KQL + Filters)
 
 **Objective:** To save a complex debugging view that uses both KQL and Filter Pills.
 
@@ -776,7 +776,7 @@ You *must* have the saved searches we created in the previous lab. For this hand
 1.  **`[SEARCH] - All 5xx Server Errors`**
 2.  **`[VIEW] - Large Downloads (by Size)`**
 
-#### 🚀 Lab 1: Create a Blank Dashboard
+####  Lab 1: Create a Blank Dashboard
 
 1.  Navigate to the main menu (☰) -> **Analytics** -> **Dashboard**.
 2.  You will see a list of all dashboards. Click the **Create dashboard** button (top-right).
@@ -784,7 +784,7 @@ You *must* have the saved searches we created in the previous lab. For this hand
 
 
 
-#### 🚀 Lab 2: Add (Pin) Your First Saved Search
+####  Lab 2: Add (Pin) Your First Saved Search
 
 1.  In the center of the screen, click the **Add from Library** button.
 2.  A large "Add panels" flyout will appear from the right.
@@ -792,7 +792,7 @@ You *must* have the saved searches we created in the previous lab. For this hand
 4.  You will see your Saved Search in the list. **Click on its name.**
 5.  **Result:** The panel is instantly added to your dashboard in the background. You will see a list of your `5xx` error logs.
 
-#### 🚀 Lab 3: Add (Pin) Your Second Saved Search (The "View")
+####  Lab 3: Add (Pin) Your Second Saved Search (The "View")
 
 1.  **Do not** close the "Add panels" flyout yet.
 2.  Clear the search bar in the flyout.
@@ -802,7 +802,7 @@ You *must* have the saved searches we created in the previous lab. For this hand
 6.  **CRITICAL:** Notice that this panel has the **custom columns** we saved (`@timestamp`, `client.ip`, `url.path`, `http.response.body.bytes`) and is sorted by size. Kibana remembered our *entire view*.
 7.  Now, click the `X` in the top-right of the "Add panels" flyout to close it.
 
-#### 🚀 Lab 4: Arrange and Save Your New Dashboard
+####  Lab 4: Arrange and Save Your New Dashboard
 
 1.  Your dashboard now has two panels, probably stacked on top of each other. Let's arrange them.
 2.  **Move a Panel:** Click and hold the title bar of the `[VIEW] - Large Downloads (by Size)` panel and drag it to the right of the `[SEARCH] - All 5xx Server Errors` panel.
@@ -822,13 +822,13 @@ You *must* have the saved searches we created in the previous lab. For this hand
 
 ### 4. Conceptual & Hands-On Deep Dive: The MAGIC of a Dashboard (Interactivity)
 
-This is the "A-ha!" moment. Why is a dashboard better than a static report? Because it's a *tool*, not just a picture.
+Why is a dashboard better than a static report? Because it's a *tool*, not just a picture.
 
 You are in "View Mode" for your new `[DASHBOARD] - Access Log Operations`.
 
 Notice the **Time Picker** and the **KQL Bar** are *still* at the top of the page. These are now **Global Controls** for *every single panel* on your dashboard.
 
-#### 🚀 Lab 5: Using the Global KQL Bar
+####  Lab 5: Using the Global KQL Bar
 
 **Task:** "This is a great report, but I only care about the `payment-service`. Show me this *entire* dashboard, but filtered *only* for the `payment-service`."
 
@@ -840,7 +840,7 @@ Notice the **Time Picker** and the **KQL Bar** are *still* at the top of the pag
     * The `[VIEW] - Large Downloads (by Size)` panel will *also* update. It now *only* shows large downloads from the `payment-service`.
 4.  **Conclusion:** You have just used the dashboard as a *dynamic filter*. You didn't have to re-build anything. You simply added a "global filter" to your "cockpit" view.
 
-#### 🚀 Lab 6: Using Global Filters (Pills)
+####  Lab 6: Using Global Filters (Pills)
 
 **Task:** "This is great. Now, clear that. I want to see all traffic from `curl` users."
 
@@ -855,7 +855,7 @@ Notice the **Time Picker** and the **KQL Bar** are *still* at the top of the pag
     * A global filter pill `user_agent.name is "curl"` appears.
     * *Both* your panels instantly filter to show *only* data from `curl` requests. You can see all the `5xx` errors from `curl` and all the "Large Downloads" from `curl`.
 
-#### 🚀 Lab 7: Using the Global Time Picker
+####  Lab 7: Using the Global Time Picker
 
 **Task:** "This 2020 data is fine for a lab, but I want to see what's happening *right now*."
 

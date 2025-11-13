@@ -2,7 +2,7 @@
 
 ---
 
-## 🚀 Step 1: Getting Cluster and Node Information
+##  Step 1: Getting Cluster and Node Information
 
 All the commands below should be executed directly inside the **Kibana Dev Tools Console**.
 

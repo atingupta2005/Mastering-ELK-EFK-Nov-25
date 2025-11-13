@@ -58,7 +58,7 @@ In production, you don't use one giant index (like our `web-logs`). You use time
 
 You don't want to create a new pattern every day\! So, you create one **Index Pattern** called `web-logs*` (using a wildcard `*`). This single pattern will automatically match all of those daily indices.
 
-#### 🚀 Hands-On Lab: Creating our Index Pattern
+####  Hands-On Lab: Creating our Index Pattern
 
 Let's create the pattern for the `web-logs` index we made in the last lab.
 
@@ -101,7 +101,7 @@ You are now looking at the **Discover** interface. Let's break it down:
   * **4. Histogram (Top Chart):** A bar chart showing the *count* of documents over the time range you selected.
   * **5. Document Table (Bottom):** The "raw" list of your log messages. You can click the `>` arrow on any log to expand it and see all the JSON fields.
 
-#### 🚀 Hands-On Lab: Searching with KQL
+####  Hands-On Lab: Searching with KQL
 
 KQL is simpler than the full Query DSL. Let's try the same searches we did in Dev Tools. Type these into the KQL bar and press Enter.
 
@@ -174,7 +174,7 @@ Writing KQL is great, but sometimes it's faster to just point and click. **Filte
 
 You can add filters *without* writing any KQL.
 
-#### 🚀 Hands-On Lab: Adding Filters
+####  Hands-On Lab: Adding Filters
 
 **Method 1: The "Easy Way" (from the Document Table)**
 

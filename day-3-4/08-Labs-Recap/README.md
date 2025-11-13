@@ -32,7 +32,7 @@ In this lab, we will load the "Sample web logs" to see what a "finished" product
 
 ### 2\. Extensive Hands-On Lab: Installing the "Sample Web Logs"
 
-#### 🚀 Lab 1: Navigate to the Sample Data Directory
+####  Lab 1: Navigate to the Sample Data Directory
 
 1.  In Kibana, navigate to the **Home** page (click the Elastic logo or the Kibana icon in the top-left corner).
 2.  On the Home page, you will see a large "Welcome" message. Look for a section or button labeled **"Add integrations"** or **"Add sample data"**.
@@ -40,7 +40,7 @@ In this lab, we will load the "Sample web logs" to see what a "finished" product
 4.  Find the link/button that says **"Sample data"**. Click it.
 5.  You will now see a page with several "Sample data" cards, such as "Sample eCommerce orders," "Sample flight data," and "Sample web logs."
 
-#### 🚀 Lab 2: Install the "Sample web logs"
+####  Lab 2: Install the "Sample web logs"
 
 1.  Find the card titled **"Sample web logs"**.
 2.  On this card, click the **"Add"** button.
@@ -55,7 +55,7 @@ In this lab, we will load the "Sample web logs" to see what a "finished" product
 
 This single click did a *lot* of work. Let's verify what just happened.
 
-#### 🚀 Lab 3: Verify the New Index
+####  Lab 3: Verify the New Index
 
 1.  Go to **Dev Tools** (☰ -\> Management -\> Dev Tools).
 2.  Run this command to see all your indices:
@@ -67,7 +67,7 @@ This single click did a *lot* of work. Let's verify what just happened.
       * A *new* index called `kibana_sample_data_logs`.
       * This confirms Kibana created a new index and loaded data into it.
 
-#### 🚀 Lab 4: Verify the New Index Pattern
+####  Lab 4: Verify the New Index Pattern
 
 1.  Go to **Stack Management** (☰ -\> Management -\> Stack Management).
 2.  Click **Index Patterns** (under Kibana).
@@ -75,7 +75,7 @@ This single click did a *lot* of work. Let's verify what just happened.
       * `access-logs*` (the one you made for your data).
       * `kibana_sample_data_logs` (the new one that was just created automatically).
 
-#### 🚀 Lab 5: Explore the New Data in Discover
+####  Lab 5: Explore the New Data in Discover
 
 1.  Go to **Discover** (☰ -\> Analytics -\> Discover).
 2.  In the top-left corner, click the **Index Pattern selector** dropdown.
@@ -91,7 +91,7 @@ This single click did a *lot* of work. Let's verify what just happened.
       * `geo.coordinates` (sample) is your `client.geo.location` (yours).
       * This shows that your custom `access-logs` schema is a professional, production-ready version of this common log type.
 
-#### 🚀 Lab 6: View the Pre-Built Dashboard (The "Goal")
+####  Lab 6: View the Pre-Built Dashboard (The "Goal")
 
 This is the most important part. Let's see the "finished product" that Kibana built for us.
 
@@ -143,7 +143,7 @@ We will now use **Method 2** and install the **`orders`** template
 
 Before we see the "right" way, we *must* see the "wrong" way to understand the risks. The "wrong" way is to let Elasticsearch *guess* your schema. This is called **Dynamic Mapping**.
 
-#### 🚀 Lab 1: Create a "Dynamic" Index
+####  Lab 1: Create a "Dynamic" Index
 
 1.  Navigate to **Dev Tools** (☰ -\> Management -\> Dev Tools).
 2.  Run this simple command to create an empty index:
@@ -152,7 +152,7 @@ Before we see the "right" way, we *must* see the "wrong" way to understand the r
     ```
     **Result:** You'll get an `"acknowledged": true`.
 
-#### 🚀 Lab 2: Index a "Guesswork" Document
+####  Lab 2: Index a "Guesswork" Document
 
 1.  Now, let's index a document. We haven't told Elasticsearch *any* rules, so it will have to guess.
     ```http
@@ -166,7 +166,7 @@ Before we see the "right" way, we *must* see the "wrong" way to understand the r
     ```
     **Result:** It works\! The document is created.
 
-#### 🚀 Lab 3: See the "Bad" Schema
+####  Lab 3: See the "Bad" Schema
 
 1.  Now, let's see what schema Elasticsearch *guessed* for us.
     ```http
@@ -190,7 +190,7 @@ Before we see the "right" way, we *must* see the "wrong" way to understand the r
       * `order_id` is `text`\! This is inefficient. It should be `keyword`.
 4.  **Conclusion:** Never let Elasticsearch guess your schema.
 
-#### 🚀 Lab 4: Clean Up
+####  Lab 4: Clean Up
 
 1.  Run this command to delete our bad test index.
     ```http
@@ -203,7 +203,7 @@ Before we see the "right" way, we *must* see the "wrong" way to understand the r
 
 Now, we will use the **`orders`** index template to build a "blueprint" for all our `orders*` indices.
 
-#### 🚀 Lab 5: Create the `orders` Index Template
+####  Lab 5: Create the `orders` Index Template
 
 1.  **Action:** In **Dev Tools**, copy and paste the *entire* command.
     ```http
@@ -282,7 +282,7 @@ We just created a powerful, professional "blueprint." Let's break down the 3 mos
 
 This is the "A-ha\!" moment. We've loaded the blueprint, but *no index exists yet*. Let's prove the template works.
 
-#### 🚀 Lab 6: Verify the Template Exists
+####  Lab 6: Verify the Template Exists
 
 1.  **Action:** Run this command to *read* the template you just created.
     ```http
@@ -290,7 +290,7 @@ This is the "A-ha\!" moment. We've loaded the blueprint, but *no index exists ye
     ```
     **Result:** You will see your template's configuration.
 
-#### 🚀 Lab 7: Trigger the Template by Creating a Matching Index
+####  Lab 7: Trigger the Template by Creating a Matching Index
 
 1.  **Action:** Let's create a *brand new, empty index* whose name *matches* our pattern.
     ```http
@@ -298,7 +298,7 @@ This is the "A-ha\!" moment. We've loaded the blueprint, but *no index exists ye
     ```
 2.  **Result:** You'll get `"acknowledged": true`.
 
-#### 🚀 Lab 8: Verify the Mappings were Applied
+####  Lab 8: Verify the Mappings were Applied
 
 1.  **Action:** Now, let's ask Kibana for the schema of the new index we just created.
     ```http
@@ -324,7 +324,7 @@ This is the "A-ha\!" moment. We've loaded the blueprint, but *no index exists ye
     ```
 3.  **Conclusion:** This proves the "blueprint" worked. We created an empty index, but because its name (`orders-lab-test-001`) matched the template's pattern (`orders*`), Elasticsearch *automatically* applied all the correct settings and mappings.
 
-#### 🚀 Lab 9: (Optional) Prove Schema Enforcement
+####  Lab 9: (Optional) Prove Schema Enforcement
 
 1.  Now, let's prove that `"dynamic": false` works.
 2.  **Action:** Try to index a document with a *new field* that's not in the template.
@@ -339,7 +339,7 @@ This is the "A-ha\!" moment. We've loaded the blueprint, but *no index exists ye
     ```
 3.  **Result:** You will get a `400 Bad Request` error. The error type will be `strict_dynamic_mapping_exception`. This is **GOOD\!** The template has protected your index from being polluted with an unknown field.
 
-#### 🚀 Lab 10: Clean Up
+####  Lab 10: Clean Up
 
 1.  **Action:** Let's delete our test index and the template.
     ```http
@@ -386,7 +386,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
 3.  You have the `access-logs` index template loaded.
 4.  You have the `orders` index template loaded (from the previous lab).
 
-#### 🚀 Lab 1: Create the `orders*` Index Pattern
+####  Lab 1: Create the `orders*` Index Pattern
 
 1.  Navigate to **Stack Management** (☰ -\> Management -\> Stack Management).
 2.  Click **Index Patterns**.
@@ -410,7 +410,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
   * Select the **`access-logs*`** index pattern.
   * Set your **Time Picker** to your 2020 data (e.g., `Jan 1, 2020` to `Apr 1, 2020`).
 
-#### 🚀 Scenario A: Security Audit
+####  Scenario A: Security Audit
 
   * **The Question:** "I need a list of all potential breaches. Show me every `401` (Unauthorized) and `403` (Forbidden) log. But... ignore the `system` user; that's just our health check bot and it's noisy."
 
@@ -424,7 +424,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
 
   * **Analyze the Result:** You will get a precise list of *actual* unauthorized requests (e.g., `recap-002`, `recap-010`, `recap-020`). You have successfully found all security issues while filtering out the "noise" from the system bot.
 
-#### 🚀 Scenario B: Performance Debugging
+####  Scenario B: Performance Debugging
 
   * **The Question:** "Our `/api/` endpoints feel slow. Find all `POST` requests to *any* API path that took longer than 1 second (1000ms)."
 
@@ -438,7 +438,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
 
   * **Analyze the Result:** This will find `recap-003` (the `payment-service` crash at 10500ms) and `recap-008` (the successful payment at 1200ms). This query is a perfect "slow API" detector.
 
-#### 🚀 Scenario C: Geo-IP & User-Agent Analysis
+####  Scenario C: Geo-IP & User-Agent Analysis
 
   * **The Question:** "Our marketing team is running a campaign in China. Are they using the correct link? Find all traffic from 'China' that resulted in a `404 Not Found`."
 
@@ -452,7 +452,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
 
   * **Result:** This will return any `404` logs from China, showing *exactly* which `url.path` is broken for that campaign.
 
-#### 🚀 Scenario D: Advanced Filtering (KQL + Filter Pills)
+####  Scenario D: Advanced Filtering (KQL + Filter Pills)
 
   * **The Question:** "This is complex. I need to find all `500` errors from the `frontend-web` service. Once I have that list, I want to *also* filter it to see which ones were *only* from `Firefox` users."
 
@@ -489,7 +489,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
 
 *(Note: Since I don't have your `orders.bulk.ndjson` data, I will write queries based on your `orders` schema. You may need to adjust values like "Brenda Nguyen" or "Electronics" to match your actual data.)*
 
-#### 🚀 Scenario E: Sales Performance Review
+####  Scenario E: Sales Performance Review
 
   * **The Question:** "We need to review the high-value sales from our top salesman, 'Brenda Nguyen'. Find all sales for her that were over $100."
 
@@ -503,7 +503,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
 
   * **Analyze the Result:** You'll get a list of all high-value orders for that specific salesperson, ready to be exported for a commission report.
 
-#### 🚀 Scenario F: Marketing Demographics
+####  Scenario F: Marketing Demographics
 
   * **The Question:** "Our new 'Active Life' (brand) campaign is targeted at men aged 25-35. Is it working? Find all sales for this brand to this demographic."
 
@@ -517,7 +517,7 @@ This lab requires *two* index patterns. We already created `access-logs*`. Now, 
 
   * **Analyze the Result:** This gives you a precise list of every "on-target" sale, proving the campaign's effectiveness.
 
-#### 🚀 Scenario G: Advanced Business Logic (KQL + Filter Pills)
+####  Scenario G: Advanced Business Logic (KQL + Filter Pills)
 
   * **The Question:** "I need to find all 'Electronics' sales. After I see that list, I want to quickly toggle between 'Online' (channel) and 'In-Store' (channel) sales."
 
@@ -574,7 +574,7 @@ Instead, Kibana uses a **background task** workflow:
 
 **Scenario:** A security manager, who doesn't have Kibana access, needs a full report of all unauthorized (`401`) and forbidden (`403`) access attempts from our `access-logs` data for Q1 2020.
 
-#### 🚀 Lab 1: Build the "Security Report" View
+####  Lab 1: Build the "Security Report" View
 
 **This is the most important step.** The CSV export will *only* contain the data you filter for, and it will *only* have the columns you make visible. You must build a clean view *first*.
 
@@ -598,7 +598,7 @@ Instead, Kibana uses a **background task** workflow:
       * Now, find `message` in the "Selected fields" list at the top of the sidebar and **remove** (`-`) it.
 7.  **Review:** You now have a clean, 6-column table showing *only* the security failures. This is a perfect "report view."
 
-#### 🚀 Lab 2: Generate the CSV Report
+####  Lab 2: Generate the CSV Report
 
 1.  In the Discover toolbar (at the top of the page, above the histogram), find the **Reporting** button.
 2.  Click **Reporting**.
@@ -607,7 +607,7 @@ Instead, Kibana uses a **background task** workflow:
 5.  Click the **"Generate"** button.
 6.  A "Creating report..." pop-up will appear in the bottom-right. It will tell you: "You can track its progress in **Management / Reporting**."
 
-#### 🚀 Lab 3: Download the Finished Report
+####  Lab 3: Download the Finished Report
 
 1.  Now, we go to the "download" page.
 2.  Navigate to **Stack Management** (☰ -\> Management -\> Stack Management).
@@ -616,7 +616,7 @@ Instead, Kibana uses a **background task** workflow:
 5.  On the far right of that row, click the **Download** icon (a downward-facing arrow).
 6.  Your browser will now download the CSV file (e.g., `access-logs.csv`).
 
-#### 🚀 Lab 4: Verify the CSV
+####  Lab 4: Verify the CSV
 
 1.  Open the downloaded `.csv` file in Microsoft Excel, Google Sheets, or any text editor.
 2.  **Verify the Columns:** You will see that the headers are *exactly* the 6 columns you selected: `@timestamp`, `client.ip`, `user_id`, etc.
@@ -633,7 +633,7 @@ Let's do it again, but for a business scenario.
 
 *(Note: Adjust these values like "Active Life" or "Online" to match your actual `orders` data.)*
 
-#### 🚀 Lab 5: Build the "Sales Report" View
+####  Lab 5: Build the "Sales Report" View
 
 1.  Navigate to **Discover**.
 2.  Change your **Index Pattern** (top-left) to **`orders*`**.
@@ -654,7 +654,7 @@ Let's do it again, but for a business scenario.
       * **Remove (`-`):** `message` (if it's there).
 6.  **Review:** You now have a perfect, 7-column table of high-value online sales.
 
-#### 🚀 Lab 6: Generate and Download the CSV
+####  Lab 6: Generate and Download the CSV
 
 1.  Click **Reporting** -\> **Generate CSV**.
 2.  Click **Generate**.
@@ -670,7 +670,7 @@ Let's do it again, but for a business scenario.
 
 A CSV is for *offline* users. What if you want to share your *Kibana view* with another *Kibana user*?
 
-#### 🚀 Lab 7: Sharing a "Permalink" (A Link to Your View)
+####  Lab 7: Sharing a "Permalink" (A Link to Your View)
 
 1.  Go back to **Discover** and load your "Security Report" view from Lab 1 (`http.response.status_code: 401 or 403`).
 2.  In the Discover toolbar, click the **Share** button (next to Reporting).
