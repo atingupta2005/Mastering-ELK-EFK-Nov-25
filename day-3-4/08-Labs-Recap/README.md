@@ -24,7 +24,7 @@ Kibana, as a platform, wants to make it *easy* for new users to learn. To do thi
 **How is this different from *our* `access-logs` data?**
 
   * **Sample Data (Easy Mode):** A "demo" dataset. It's fantastic for learning, but it's not *your* data.
-  * **Your `access-logs` (Pro Mode):** This is *your* custom, production data. You (or your `README.md`) defined the schema, you control the data, and you must build your *own* dashboards from scratch.
+  * **Your `access-logs` (Pro Mode):** This is *your* custom, production data. You defined the schema, you control the data, and you must build your *own* dashboards from scratch.
 
 In this lab, we will load the "Sample web logs" to see what a "finished" product looks like. We will then compare its fields to your `access-logs` schema to see how similar they are.
 
@@ -135,7 +135,7 @@ This is the *most important* method for production. You don't create an *index*;
   * This "blueprint" waits. When a *new* index is created that matches its `index_patterns` (e.g., `orders-*`), it *automatically* applies its rules to that new index.
   * This is the "blueprint" method. You design one perfect "blueprint" (`orders` template), and every "house" ( `orders-2020-01`, `orders-2020-02`, etc.) is built *perfectly* from that plan, every single time.
 
-In this lab, we will use **Method 2** and install the **`orders`** template from your `README.md` file.
+We will now use **Method 2** and install the **`orders`** template
 
 -----
 
@@ -201,11 +201,11 @@ Before we see the "right" way, we *must* see the "wrong" way to understand the r
 
 ### 3\. Extensive Hands-On Lab: The "Professional" Way (Index Template)
 
-Now, we will use the **`orders`** index template from your `README.md` file to build a "blueprint" for all our `orders*` indices.
+Now, we will use the **`orders`** index template to build a "blueprint" for all our `orders*` indices.
 
 #### 🚀 Lab 5: Create the `orders` Index Template
 
-1.  **Action:** In **Dev Tools**, copy and paste the *entire* command from your `README.md` file.
+1.  **Action:** In **Dev Tools**, copy and paste the *entire* command.
     ```http
     PUT /_index_template/orders
     {
@@ -735,9 +735,9 @@ Always check these 4 things, in this exact order.
 
 ### 3\. The "Coercion" Problem: My Number Query Fails
 
-This is a specific, advanced problem caused by your excellent `README.md` templates.
+This is a specific, advanced problem caused by templates.
 
-  * **The Concept:** Your templates include `"index.mapping.coerce": false`. This makes your index *strict*. A `long` (number) field will *only* accept numbers. A `string` (text/keyword) field will *only* accept strings.
+  * **The Concept:** Templates include `"index.mapping.coerce": false`. This makes your index *strict*. A `long` (number) field will *only* accept numbers. A `string` (text/keyword) field will *only* accept strings.
   * **The Symptom:** You run a query in **Dev Tools** that *looks* right, but it fails.
   * **Action (Dev Tools):**
     ```http

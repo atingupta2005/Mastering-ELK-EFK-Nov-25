@@ -17,7 +17,7 @@ Without this "Card Catalog," Kibana is blind. It doesn't know what data you have
 
 #### Why is the "Pattern" (Wildcard `*`) so important?
 
-Your `README.md` file shows you load data into time-based indices:
+You load data into time-based indices:
 * `access-logs-2020-01`
 * `access-logs-2020-02`
 * `access-logs-2020-03`
