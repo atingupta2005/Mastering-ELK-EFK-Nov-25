@@ -112,7 +112,7 @@ This is the most important part. Let's see the "finished product" that Kibana bu
 
 ### 1\. Conceptual Deep Dive: Why Create an Index Manually?
 
-In the previous lab (Topic 30), we saw the "easy way" to create an index: by adding "Sample Data." Kibana did all the work *for* us. This is great for a demo, but it's not how a real system works.
+In the previous lab, we saw the "easy way" to create an index: by adding "Sample Data." Kibana did all the work *for* us. This is great for a demo, but it's not how a real system works.
 
 In a professional environment, **you** (the administrator) must have *total control* over your data.
 
