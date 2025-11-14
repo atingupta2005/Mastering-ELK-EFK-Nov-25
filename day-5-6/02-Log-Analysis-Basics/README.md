@@ -1,173 +1,146 @@
-## 📅 Day 5: Log Analysis Basics
+## Log Analysis Basics
 
-This module provides a set of practical "recipes" for answering common analytical questions. You will use the Discover tab to move beyond simple searching and start performing real-world analysis on your `access-logs` and `orders` data.
+### Lab Setup: Ingesting New Sample Data
 
-**Prerequisite:**
+Before we can analyze, we must add new data that will allow us to find interesting patterns. We will add new logs to `access-logs-2020-01` and new orders to your `orders` index.
 
-  * You are in the **Discover** application (☰ -\> Analytics -\> Discover).
-  * Your **Time Picker** is set to an absolute range that includes all your sample data (e.g., `January 1, 2020` to `April 1, 2020`).
+**Action:** Navigate to **Management -\> Dev Tools**. Copy and run the entire `_bulk` command below to add 12 new documents.
 
------
+```http
+POST /_bulk
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-001" } }
+{ "@timestamp": "2020-01-20T10:00:00Z", "service_name": "frontend-web", "client.ip": "10.10.10.10", "http.response.status_code": 200, "user_id": "dave", "message": "User 'dave' login successful", "response_time_ms": 120 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-002" } }
+{ "@timestamp": "2020-01-20T10:01:00Z", "service_name": "frontend-web", "client.ip": "10.10.10.10", "http.response.status_code": 200, "user_id": "dave", "message": "User 'dave' GET /profile", "response_time_ms": 80 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-003" } }
+{ "@timestamp": "2020-01-20T10:02:00Z", "service_name": "frontend-web", "client.ip": "10.10.10.10", "http.response.status_code": 404, "user_id": "dave", "message": "User 'dave' GET /profile/image.png (Not Found)", "response_time_ms": 30 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-004" } }
+{ "@timestamp": "2020-01-20T10:02:15Z", "service_name": "frontend-web", "client.ip": "10.10.10.10", "http.response.status_code": 404, "user_id": "dave", "message": "User 'dave' GET /profile/avatar.jpg (Not Found)", "response_time_ms": 28 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-005" } }
+{ "@timestamp": "2020-01-20T10:05:00Z", "service_name": "api-gateway", "client.ip": "8.8.8.8", "http.response.status_code": 404, "message": "GET /v1/invalid (Not Found)", "response_time_ms": 45 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-006" } }
+{ "@timestamp": "2020-01-20T10:05:05Z", "service_name": "api-gateway", "client.ip": "8.8.8.8", "http.response.status_code": 404, "message": "GET /v1/old (Not Found)", "response_time_ms": 42 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-007" } }
+{ "@timestamp": "2020-01-20T10:05:10Z", "service_name": "api-gateway", "client.ip": "8.8.8.8", "http.response.status_code": 404, "message": "GET /v1/test (Not Found)", "response_time_ms": 44 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-008" } }
+{ "@timestamp": "2020-01-20T10:08:00Z", "service_name": "payment-service", "client.ip": "10.10.10.10", "http.response.status_code": 503, "user_id": "dave", "message": "Service Unavailable. Payment API is down.", "response_time_ms": 5200 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-009" } }
+{ "@timestamp": "2020-01-20T10:08:02Z", "service_name": "payment-service", "client.ip": "10.10.10.10", "http.response.status_code": 503, "user_id": "dave", "message": "Service Unavailable. Payment API is down.", "response_time_ms": 5100 }
+{ "index": { "_index": "access-logs-2020-01", "_id": "la-010" } }
+{ "@timestamp": "2020-01-20T10:08:05Z", "service_name": "payment-service", "client.ip": "10.10.10.10", "http.response.status_code": 503, "user_id": "dave", "message": "Service Unavailable. Payment API is down.", "response_time_ms": 5300 }
+{ "index": { "_index": "orders", "_id": "la-ord-001" } }
+{ "@timestamp": "2020-01-20T10:01:30Z", "id": "ORD-DAVE-001", "product": { "id": "P-123", "name": "Men's T-Shirt", "price": 25.0, "brand": "Active Life", "category": "Clothing" }, "customer.id": "dave", "customer.age": 34, "customer.gender": "male", "customer.name": "Dave Liu", "channel": "Online", "discount": 5.0, "total": 20.0 }
+{ "index": { "_index": "orders", "_id": "la-ord-002" } }
+{ "@timestamp": "2020-01-20T10:09:00Z", "id": "ORD-DAVE-002", "product": { "id": "P-456", "name": "Laptop", "price": 1200.0, "brand": "TechCorp", "category": "Electronics" }, "customer.id": "dave", "customer.age": 34, "customer.gender": "male", "customer.name": "Dave Liu", "channel": "Online", "discount": 120.0, "total": 1080.0 }
+```
 
-### 1\. Spotting Spikes in Errors
-
-#### Conceptual Overview
-
-Log analysis often begins by identifying anomalies in data volume. A "spike" is a sudden, significant increase in the count of a specific type of log, which typically indicates a meaningful event such- as a service failure, a security event, or a misconfiguration.
-
-The primary tool for this analysis is the **Discover Histogram**. This bar chart displays the count of documents (y-axis) over your selected time range (x-axis).
-
-This histogram is not static; it dynamically redraws itself to reflect the results of your KQL query and filters. By default, it shows the count of *all* logs. By applying a query (e.g., `http.response.status_code: 401`), you change the histogram to show the count of *only* `401` error logs. This allows you to visually pinpoint the exact time an error spike occurred.
-
-#### 🚀 Hands-On Lab: Visual Analysis of a Security Spike
-
-**Prerequisite:**
-
-  * Navigate to **Discover**.
-  * Select the `access-logs*` index pattern.
-  * Set your **Time Picker** to the absolute range of your 2020 sample data.
-
-**Lab 1.1: Isolate a Security Spike (`401` Errors)**
-
-1.  **Task:** An analyst suspects a brute-force login attempt. We need to find the timeline of "Unauthorized" errors.
-2.  **Action:** In the KQL search bar, enter the following query:
-    `http.response.status_code: 401`
-3.  **Analyze:** Observe the **Histogram**. It will update to show *only* the `401` errors. If these errors all occur in one or two bars, you have found a "spike," which is a strong indicator of an attack.
-
-**Lab 1.2: Correlate Spikes for Root Cause Analysis**
-
-1.  **Task:** The `401` spike is interesting, but we also want to see if it's related to `404` errors (which could be an attacker "probing" for admin panels).
-2.  **Action:** Modify your KQL query to show *both* error types:
-    `(http.response.status_code: 401 or http.response.status_code: 404)`
-3.  **Analyze:** The histogram will now show the combined timeline of both `401` and `404` errors. This gives you a more complete picture of the potential attack.
-
-**Lab 1.3: Zoom in on a Spike for Context**
-
-1.  **Task:** Now that we've seen the spike, we need to see what *else* was happening at that exact moment.
-2.  **Action:** In the KQL bar, **clear your query** and press Enter. The histogram will update to show *all* log traffic again.
-3.  **Action:** On the histogram, find the time of the `401` spike you just identified.
-4.  **Action:** Click and drag your mouse to select a small window *around* that spike (e.g., a 10-minute range).
-5.  **Analyze:** The **Time Picker** and **Document Table** update to this new, small time range. You can now see the full sequence of *all* logs (not just errors) that led up to and followed the security event. This "neighbor analysis" is essential for debugging.
+*Result: You have successfully added 10 new log entries and 2 new orders.*
 
 -----
 
-### 2\. Tracking Top IP Addresses
+### Spotting Spikes in Errors
 
-#### Conceptual Overview
+**Conceptual Overview:**
+A "spike" is a sudden, visual increase in the count of logs in the **Discover Histogram**. This is the automatic bar chart at the top of the Discover page. This chart is dynamic and redraws itself to reflect your KQL query, allowing you to visually pinpoint the exact time an error spike occurred.
 
-A common question is "Who is hitting my server?" or "Which client is causing all these errors?" The **Field List** on the left side of Discover automatically calculates the "Top 5" values for `keyword` fields, which is the perfect tool for this.
+**Hands-On Lab: Visual Analysis of Our New Spike**
 
-This feature is dynamic. It shows the Top 5 values for *all data in your current view*. If you filter for `500` errors, the Top 5 list will *also* update to show you the Top 5 IPs responsible *only* for those `500` errors.
-
-#### 🚀 Hands-On Lab: Finding Top N Values
-
-**Lab 2.1: Find "Top Browsers" (Overall Traffic)**
-
-1.  **Action:** Select the `access-logs*` index pattern. Clear all KQL queries and filters.
-2.  **Action:** In the **Field List** (left sidebar), find and click the `user_agent.name` field.
-3.  **Analyze:** The field will expand to show the **Top 5** browser names (e.g., `Chrome`, `Firefox`, `curl`) and the percentage of all logs they are responsible for.
-
-**Lab 2.2: Find "Top Referrers" (Marketing Analysis)**
-
-1.  **Task:** We want to know which external websites are sending us the most traffic.
-2.  **Action (KQL):** We must first filter *out* any logs that don't have a referrer. In the search bar, type `http.request.referrer: *` and press Enter. (This finds all logs where the referrer field "exists").
-3.  **Action:** Now, in the Field List, find and click `http.request.referrer`.
-4.  **Analyze:** The Top 5 list now shows the *exact* domains that are sending you the most traffic.
-
-**Lab 2.3: Find "Top Customers" (Business Analysis)**
-
-1.  **Action:** Switch your **Index Pattern** (top-left) to `orders*`.
-2.  **Action:** Clear all KQL queries and filters.
-3.  **Action:** In the **Field List**, find and click `customer.name`.
-4.  **Analyze:** The field expands to show your **Top 5** customers by *number of orders placed*.
+1.  **Action:** Navigate to **Discover** and select the **`access-logs*`** index pattern.
+2.  **Action:** Set the **Time Picker** to a narrow range around our new data.
+      * **Start:** `2020-01-20T09:55:00Z`
+      * **End:** `2020-01-20T10:15:00Z`
+      * Click **Update**.
+3.  **Analyze:** Look at the **Histogram**. You will see several bars with a `count` of 1 or 2, but you will see two prominent spikes:
+      * One spike (count of 3) around `10:05`
+      * One spike (count of 3) around `10:08`
+4.  **Action:** Let's isolate the *error* spike. In the KQL search bar, enter the **correct** range query (a wildcard `5*` will not work on a `long` field):
+    ```kql
+    http.response.status_code >= 500 and http.response.status_code <= 599
+    ```
+5.  **Analyze:** The **Histogram** updates. The `10:05` spike (which was `404` errors) disappears. The *only* bar left is the one at `10:08` with a count of 3. You have now confirmed and isolated your *server error* spike.
+6.  **Action:** Clear the KQL bar. Click and drag your mouse on the histogram just around the `10:08` spike (e.g., from `10:07:00` to `10:09:00`).
+7.  **Analyze:** The **Time Picker** and **Document Table** update. You can now see the three `503` error logs (`la-008`, `la-009`, `la-010`) and can confirm they all belong to `user_id: "dave"`.
 
 -----
 
-### 3\. Checking User Activity
+### Tracking Top IP Addresses
 
-#### Conceptual Overview
+**Conceptual Overview:**
+A common question is "Who is hitting my server?" or "Which client is causing all these errors?" The **Field List** on the left side of Discover dynamically calculates the "Top 5" values for `keyword` fields based on your current query.
 
-This is the "needle in a haystack" workflow. A specific user (e.g., `user_id: "admin"`) reports a problem, or you see them in a log and want to know *everything* they did. This is a filtering exercise.
+**Hands-On Lab: Finding "Top Offenders"**
 
-By filtering for a single `user_id`, `customer.name`, or `client.ip`, you can isolate their activity and see their session from beginning to end, sorted by time.
-
-#### 🚀 Hands-On Lab: Tracing a User Session
-
-**Lab 3.1: Trace a User in `access-logs`**
-
-1.  **Action:** Select the `access-logs*` index pattern. Clear all KQL and filters.
-2.  **Task:** Find all activity for `user_id: "admin"`.
-3.  **Action (Filter):** In the **Field List**, find and click `user_id`.
-4.  Hover over `admin` (or another user) and click the **`+` (Filter for value)** icon.
-5.  **Analyze:** A filter pill `user_id is "admin"` is added. The document table now shows *only* logs from this user, sorted by time. You can read their `url.path` actions like a story, creating a complete audit trail of their session.
-
-**Lab 3.2: Correlate User Activity with Errors**
-
-1.  **Task:** Now that we are watching the `admin` user, we *only* want to see the errors they encountered.
-2.  **Action:** *Keep* the `user_id is "admin"` filter pill.
-3.  **Action (KQL):** In the search bar, type `not http.response.status_code: 200`.
-4.  **Analyze:** The document table updates. It now shows all logs that are:
-      * (Filter) `user_id is "admin"`
-      * **AND**
-      * (KQL) `http.response.status_code` is *not* `200`.
-        You have a complete list of all `404`, `500`, `401`, etc., errors for *only* that user.
-
-**Lab 3.3: Trace an Order ID in `orders`**
-
-1.  **Action:** Switch your **Index Pattern** to `orders*`.
-2.  **Task:** A customer calls about `order_id` "xyz-123" (find a real ID from your data).
-3.  **Action (KQL):** In the search bar, type `id: "xyz-123"`.
-4.  **Analyze:** The table shows the single order. You can expand it to see all details: the customer, the products, the price, and the `salesman.name`.
+1.  **Action:** In **Discover**, select the `access-logs*` pattern and set the Time Picker to the `2020-01-20T10:00:00Z` to `2020-01-20T10:15:00Z` range.
+2.  **Task:** Find the IP address responsible for the most `404` errors.
+3.  **Action (KQL):** In the search bar, type `http.response.status_code: 404` and press Enter.
+4.  **Analyze:** The document table filters to show *only* `404` logs (our logs `la-003`, `la-004`, `la-005`, `la-006`, `la-007`).
+5.  **Action:** Now, look at the **Field List** on the left and find `client.ip`. Click it to expand.
+6.  **Analyze:** The Top 5 list has dynamically updated. It no longer shows the "Top Talkers" overall; it now shows the **Top 5 IPs responsible for `404` errors**. You will see:
+      * `8.8.8.8` (3 hits)
+      * `10.10.10.10` (2 hits)
+        You have instantly identified the "top offender."
 
 -----
 
-### 4\. Identifying Slow Response Times
+### Checking User Activity
 
-#### Conceptual Overview
+**Conceptual Overview:**
+This is the "needle in a haystack" workflow. A user (or IP) has been identified, and you need to see *everything* they did. By filtering for a single user, you can isolate their activity and see their session from beginning to end, sorted by time.
 
-Site performance is a critical metric. Your `access-logs` schema contains the `response_time_ms` field, which is a `long` (number). We can analyze this field to find bottlenecks.
+**Hands-On Lab: Tracing User "dave"**
 
-#### 🚀 Hands-On Lab: Finding Slow Requests
-
-**Lab 4.1: Find All Slow Requests (Simple Range Query)**
-
-1.  **Action:** Select the `access-logs*` index pattern.
-2.  **Task:** Find all requests that took longer than 1.5 seconds (1500 milliseconds).
-3.  **Action (KQL):** In the search bar, type `response_time_ms > 1500` and press Enter.
-4.  **Analyze:** The document table instantly filters to show *only* your slowest requests.
-
-**Lab 4.2: Find the "Top 10 Slowest" Requests (Sorting)**
-
-1.  **Action:** Clear the KQL bar.
-2.  **Task:** We want to see a "Top 10 Slowest" list, regardless of time.
-3.  **Action (Customize Table):** In the Field List, add the `response_time_ms` field as a column to your document table (click the `+` button).
-4.  **Action (Sort):** Click the **header** of the `response_time_ms` column in the table. It will sort ascending (fastest). Click the header **again**.
-5.  **Analyze:** The table is now sorted *descending* (slowest to fastest). The very first log in the list is the single slowest request in your entire time range.
-
-**Lab 4.3: Get Average Response Time for a *Specific URL***
-
-1.  **Task:** What is the *average* response time for our `/api/v1/login` endpoint?
-2.  **Action (KQL):** In the search bar, type `url.path: "/api/v1/login"`.
-3.  **Action:** In the **Field List** (left), find and click `response_time_ms`.
-4.  **Analyze:** The field expands to show you statistics for the logs *that match your query*. You will see:
-      * **`min`:** The fastest login
-      * **`max`:** The slowest login
-      * **`avg`:** The average login time
-        This is a powerful, instant statistical view that updates with every query.
+1.  **Action:** Select the `access-logs*` index pattern. Set the time to our 15-minute window.
+2.  **Action:** Clear all KQL queries. We will use a filter pill.
+3.  **Task:** Find all activity for `user_id: "dave"`.
+4.  **Action (Filter):** In the **Field List**, find and click `user_id`.
+5.  Hover over `dave` and click the **`+` (Filter for value)** icon.
+6.  **Analyze:** A filter pill `user_id is "dave"` is added. The document table now shows *only* logs from this user, sorted by time. You can read their `url.path` actions like a story:
+      * `10:00:00` - Login (Success)
+      * `10:01:00` - `GET /profile` (Success)
+      * `10:02:00` - `GET /profile/image.png` (404)
+      * `10:02:15` - `GET /profile/avatar.jpg` (404)
+      * `10:08:00` - `payment-service` (503)
+      * `10:08:02` - `payment-service` (503)
+      * `10:08:05` - `payment-service` (503)
+        You have a complete audit trail of this user's very bad session.
 
 -----
 
-### 5\. Adding Scripted Field (Basic Calculation)
+### Identifying Slow Response Times
 
-#### Conceptual Overview
+**Conceptual Overview:**
+Site performance is a critical metric. Your `access-logs` schema contains the `response_time_ms` field (a `long`). We can analyze this field to find bottlenecks.
 
+**Hands-On Lab: Finding Slow Requests**
+
+1.  **Action:** Select the `access-logs*` index pattern. Keep the same time range.
+
+2.  **Task:** Find all requests that took longer than 5 seconds (5000 milliseconds).
+
+3.  **Action (KQL):** In the search bar, type `response_time_ms > 5000` and press Enter.
+
+4.  **Analyze:** The document table instantly filters to show *only* our three "payment-service" errors (`la-008`, `la-009`, `la-010`), which took 5200ms, 5100ms, and 5300ms.
+
+5.  **Task:** Find the *single slowest* request in this user's session.
+
+6.  **Action:** First, filter for the user (`user_id is "dave"`). Clear the KQL bar.
+
+7.  **Action (Customize Table):** In the Field List, add the `response_time_ms` field as a column to your document table (click the `+` button).
+
+8.  **Action (Sort):** Click the **header** of the `response_time_ms` column in the table. It will sort ascending (fastest). Click the header **again**.
+
+9.  **Analyze:** The table is now sorted *descending* (slowest to fastest). The very first log (`la-010` at 5300ms) is the single slowest request in this user's session.
+
+-----
+
+### Adding Scripted Field (Basic Calculation)
+
+**Conceptual Overview:**
 Sometimes, your data is not in the perfect format. Your `orders` data has `product.price` and `discount`, but you really want to know the *final sale price*.
 
 A **Scripted Field** is a *virtual* field that you create *inside Kibana*. It does **not** change your original data. It runs a calculation on-the-fly at query time. It uses a language called **Painless**.
 
-#### 🚀 Hands-On Lab: Create a "Sale Price" Field
-
-**Lab 5.1: Create the Scripted Field**
+**Hands-On Lab: Create a "Final Price" Field**
 
 1.  **Action:** Navigate to **Stack Management** (☰ -\> Management -\> Stack Management).
 
@@ -181,7 +154,7 @@ A **Scripted Field** is a *virtual* field that you create *inside Kibana*. It do
 
 6.  **Action:** Fill out the form:
 
-      * **Name:** `sale_price`
+      * **Name:** `final_price`
       * **Language:** `painless`
       * **Type:** `number`
       * **Format:** `Number` (leave as default)
@@ -196,7 +169,6 @@ A **Scripted Field** is a *virtual* field that you create *inside Kibana*. It do
     }
 
     // Perform the calculation and return the value
-    // This is safer than just `return doc['product.price'].value - doc['discount'].value`
     double price = doc['product.price'].value;
     double disc = doc['discount'].value;
 
@@ -210,19 +182,11 @@ A **Scripted Field** is a *virtual* field that you create *inside Kibana*. It do
 
 7.  **Action:** Click **Save field**.
 
-      * *Note:* If you get a "script compilation error," double-check for typos.
+8.  **Action (Use Your New Field):**
 
-**Lab 5.2: Use Your New Scripted Field**
-
-1.  **Action:** Navigate back to **Discover** (You may need to refresh the page).
-2.  **Action:** Select the **`orders*`** index pattern.
-3.  **Action:** In the **Field List** on the left, you will now see your *new* virtual field: `sale_price`, with a `#` icon.
-4.  **Action (Use in Table):**
-      * Add `product.price` to your document table.
-      * Add `discount` to your document table.
-      * Add `sale_price` to your document table.
-      * **Analyze:** You can now see the original price, the discount, and your new calculated sale price, all side-by-side.
-5.  **Action (Use in KQL):**
-      * You can now *query* this virtual field.
-      * **KQL:** `sale_price < 10`
-      * **Analyze:** The query works. You have successfully found all "bargain" orders where the *final* price was less than $10, using a field that doesn't physically exist in your index.
+      * Navigate back to **Discover** and select the **`orders*`** index pattern.
+      * Set your time range to include `2020-01-20`.
+      * In the **Field List**, you will now see your *new* virtual field: `final_price`.
+      * **Action (Customize Table):** Add `product.price`, `discount`, and your new `final_price` to the document table.
+      * **Analyze:** You can now see the original price, the discount, and your new calculated `final_price`, all side-by-side (e.g., 25.0 - 5.0 = 20.0).
+      * **Action (Query the Field):** In the KQL bar, type `final_price > 1000`. This will correctly find `la-ord-002` (1080.0).
