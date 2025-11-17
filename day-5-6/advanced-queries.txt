@@ -1,0 +1,62 @@
+PUT /products_atin
+{
+    "settings": {
+        "number_of_replicas": 2, 
+        "index.number_of_shards": 2
+    }
+}
+
+
+PUT /products_atin/_doc/100
+{
+  "name": "Toaster",
+  "price": 49,
+  "in_stock": 4
+}
+
+
+
+
+PUT /products_atin/_doc/101
+{
+  "name": "Toaster",
+  "price": 52,
+  "in_stock": 4
+}
+
+
+GET /products_atin/_doc/101
+
+GET /products_atin/_source/101
+
+POST /products_atin/_update/101
+{
+  "script": {
+    "source": "ctx._source.in_stock--"
+  }
+}
+
+
+GET /products_atin/_doc/101
+
+
+
+
+POST /products_atin/_update/101
+{
+  "script": {
+    "source": """
+      if (ctx._source.in_stock <= 0) {
+        ctx.op = 'noop';
+      }
+      else {
+        ctx._source.in_stock--
+      }
+      
+      
+      ctx._source.in_stock--;
+    """
+  }
+}
+
+GET /products_atin/_doc/101
