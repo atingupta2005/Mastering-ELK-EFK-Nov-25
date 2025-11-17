@@ -138,3 +138,46 @@ PUT /coercion_test/_mapping
         }
     }
 }
+
+
+
+GET /coercion_test/_mapping
+
+
+PUT /coercion_test_new
+{
+    "mappings": {
+    "properties": {
+        "created_at": {
+            "type": "date"
+        },
+        "price": {
+          "type": "text"
+        }
+    }
+ }
+}
+
+
+GET /coercion_test_new/_mapping
+
+
+GET /coercion_test/_search
+
+GET /coercion_test_new/_search
+
+
+POST /_reindex
+{
+    "source": {
+        "index": "coercion_test"
+    },
+    "dest": {
+        "index": "coercion_test_new"
+    }
+}
+
+GET /coercion_test_new/_mapping
+
+
+GET /coercion_test_new/_search
