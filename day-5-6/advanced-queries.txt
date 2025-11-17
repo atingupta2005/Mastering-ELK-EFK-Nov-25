@@ -60,3 +60,81 @@ POST /products_atin/_update/101
 }
 
 GET /products_atin/_doc/101
+
+
+# Optimistic concurrency control
+
+## Retrieve the document (and its primary term and sequence number)
+```
+GET /products/_doc/100
+```
+
+## Update the `in_stock` field only if the document has not been updated since retrieving it
+```
+POST /products/_update/100?if_primary_term=X&if_seq_no=X
+{
+  "doc": {
+    "in_stock": 123
+  }
+}
+```
+
+
+POST /_analyze
+{
+  "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
+  "analyzer": "standard"
+}
+
+
+POST /_analyze
+{
+  "text": "2 guys walk into   a bar, but the third... DUCKS! :-)",
+  "analyzer": "keyword"
+}
+
+PUT /coercion_test/_doc/1
+{
+  "price": 7.4
+}
+
+GET /coercion_test/_mapping
+
+GET /coercion_test/_mapping/field/price
+
+PUT /coercion_test/_doc/2
+{
+  "price": "7.9"
+}
+
+GET /coercion_test/_mapping
+
+
+GET /coercion_test/_search
+
+PUT /coercion_test/_doc/3
+{
+  "price": "7.9m"
+}
+
+PUT /coercion_test/_mapping
+{
+    "properties": {
+        "created_at": {
+            "type": "date"
+        }
+    }
+}
+
+
+GET /coercion_test/_mapping
+
+
+PUT /coercion_test/_mapping
+{
+    "properties": {
+        "price": {
+            "type": "text"
+        }
+    }
+}
