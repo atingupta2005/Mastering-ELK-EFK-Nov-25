@@ -181,3 +181,217 @@ GET /coercion_test_new/_mapping
 
 
 GET /coercion_test_new/_search
+
+
+-----------------------------------
+
+# Alias
+
+PUT /reviews_atin
+{
+  "mappings": {
+    "properties": {
+      "rating": { "type": "float" },
+      "content": { "type": "text" },
+      "product_id": { "type": "integer" },
+      "author": {
+        "properties": {
+          "first_name": { "type": "text" },
+          "last_name": { "type": "text" },
+          "email": { "type": "keyword" }
+        }
+      }
+    }
+  }
+}
+
+
+
+PUT /reviews_atin/_doc/1
+{
+  "rating": 5.0,
+  "content": "Outstanding course! Bo really taught me a lot about Elasticsearch!",
+  "product_id": 123,
+  "author": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "johndoe123@example.com"
+  }
+}
+
+
+PUT /reviews_atin/_doc/4
+{
+  "rating": 5.0,
+  "content": "Atin Outstanding",
+  "product_id": 123,
+  "author": {
+    "first_name": "John",
+    "last_name": "Doe",
+    "email": "johndoe123@example.com"
+  }
+}
+
+GET /reviews_atin/_mapping
+
+PUT /reviews_atin/_mapping
+{
+  "properties": {
+    "created_at": {
+      "type": "date"
+    }
+  }
+}
+
+
+
+GET /reviews_atin/_mapping
+
+
+PUT /reviews_atin/_mapping
+{
+  "properties": {
+    "comment": {
+      "type": "alias",
+      "path": "content"
+    }
+  }
+}
+
+
+GET /reviews_atin/_mapping
+
+
+GET /reviews_atin/_search
+{
+  "query": {
+    "match": {
+      "comment": "Outstanding"
+    }
+  }
+}
+
+
+GET /reviews_atin/_search
+
+
+---------------------------------------
+
+PUT /multi_field_test
+{
+  "mappings": {
+    "properties": {
+      "description": {
+        "type": "text"
+      },
+      "ingredients": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword"
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+POST /multi_field_test/_doc
+{
+  "description": "To make this spaghetti carbonara, you first need to...",
+  "ingredients": ["Spaghetti", "Bacon", "Eggs"]
+}
+
+POST /multi_field_test/_doc
+{
+  "description": "To make this spaghetti carbonara, you first need to...",
+  "ingredients": "Spaghetti Bacon Eggs"
+}
+
+GET /multi_field_test/_search
+
+GET /multi_field_test/_search
+{
+    "query": {
+        "match": {
+          "ingredients": "Spaghetti"
+        }
+    }
+}
+
+-------------------------------
+
+PUT /people
+{
+  "mappings": {
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+
+POST /people/_doc
+{
+  "first_name": "Bo",
+  "last_name": "Andersen"
+}
+
+GET /people/_mapping
+
+delete /people
+
+
+PUT /people
+{
+  "mappings": {
+    "dynamic": false,
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+
+
+POST /people/_doc
+{
+  "first_name": "Bo",
+  "last_name": "Andersen"
+}
+
+
+GET /people/_mapping
+
+
+GET /people/_search
+
+delete /people
+
+PUT /people
+{
+  "mappings": {
+    "dynamic": "strict",
+    "properties": {
+      "first_name": {
+        "type": "text"
+      }
+    }
+  }
+}
+
+
+POST /people/_doc
+{
+  "first_name": "Bo",
+  "last_name": "Andersen"
+}
+
+
+GET /people/_mapping
