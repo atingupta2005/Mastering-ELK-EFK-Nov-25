@@ -1,263 +1,287 @@
-## 📅 Day 4: Logstash Basics
+# Logstash Basics
 
-### 1\. What is Logstash?
+## 1. What is Logstash?
 
-Logstash is a **server-side data processing pipeline**. It is the "L" in the original ELK Stack and a core component of the modern Elastic Stack.
+Logstash is a **data processing pipeline tool** used for collecting, transforming, and forwarding data. It is part of the Elastic Stack and works seamlessly with **Elasticsearch 9.x**.
 
-Its primary purpose is to **ingest**, **transform**, and **ship** data. While lightweight shippers like Filebeat (part of the Elastic Agent) are designed to *collect* data, Logstash is a "heavyweight" tool designed for *complex processing*.
+Logstash helps you:
 
-Logstash runs on the Java Virtual Machine (JVM) and uses a pluggable framework. It is most famous for its ability to parse unstructured, messy log data into the clean, structured JSON format that Elasticsearch requires.
+* **Ingest** data from many sources (files, beats, syslogs, cloud services)
+* **Parse & transform** logs using filters
+* **Send** data to outputs like Elasticsearch
 
-**Core Use Cases:**
+It is especially useful when you need to:
 
-  * **Parsing:** Converting a single log line (e.g., `192.168.1.1 GET /login 200`) into a structured JSON object (e.g., `{ "client_ip": "192.168.1.1", "http_method": "GET", ... }`).
-  * **Enriching:** Adding new information to a log. For example, taking the `client_ip` and using a filter to add geographic data (`client.geo.city_name: "Noida"`).
-  * **Normalizing:** Cleaning up data. For example, renaming a field (`host` -\> `host.name`), removing sensitive fields (`"password": "..." -> "password": "[REDACTED]`), or converting data types (`"http_status_code": "200"` -\> `"http_status_code": 200`).
-  * **Routing:** Sending different data to different destinations (e.g., "prod" logs go to a "prod" index, "dev" logs go to a "dev" index).
+* Clean messy logs
+* Extract fields from text
+* Apply enrichments
+* Standardize data before indexing
 
-### 2\. Logstash Architecture (Input → Filter → Output)
+---
 
-The Logstash pipeline is the core concept. A pipeline has three stages, which are defined in a configuration file: **input**, **filter**, and **output**.
+## 2. Logstash Architecture (Input → Filter → Output)
 
-1.  **Input:** This stage is responsible for *ingesting* data. An input plugin receives or collects data from a source. A pipeline can have multiple inputs.
-2.  **Filter:** This is the *processing* stage where data is transformed. Filters are applied in order. This stage is optional, but it is the primary reason Logstash is used.
-3.  **Output:** This stage is responsible for *shipping* the processed data to a destination. A pipeline can have multiple outputs.
+Logstash processes data in a simple pipeline model:
 
-**Text Diagram of the Data Flow:**
-`[Data Source] -> [Input Plugin] -> [Filter Plugin(s)] -> [Output Plugin] -> [Data Destination]`
+```
+┌────────┐    ┌───────────┐    ┌──────────┐
+│ Input  │ →  │  Filter   │ →  │  Output  │
+└────────┘    └───────────┘    └──────────┘
+```
 
-### 3\. Installing Logstash (Basic Setup)
+### Input Stage
 
-Logstash is installed on a central server, separate from your data shippers (Elastic Agents) and your Elasticsearch cluster.
+Where data comes from. Examples:
 
-#### 🚀 Hands-On: Install Logstash (CentOS)
+* File
+* Beats
+* Kafka
+* HTTP
 
-1.  **Add the Elastic Repository (if not already added):**
-    Logstash uses the same YUM repository as Elasticsearch. If you are on the same server, you can skip this. If not, add the key and repo file:
+### Filter Stage
 
-    ```bash
-    sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
+Where data is parsed or transformed. Examples:
 
-    sudo vi /etc/yum.repos.d/elastic-9.x.repo
-    ```
+* grok → extract fields
+* mutate → rename/remove fields
+* date → convert timestamps
 
-    (Paste the same `[elastic-9.x]` repo configuration used for Elasticsearch).
+### Output Stage
 
-2.  **Install the Logstash Package:**
+Where processed data is sent. Examples:
 
-    ```bash
-    sudo yum install logstash
-    ```
+* Elasticsearch
+* stdout (for debugging)
 
-3.  **Key Directories to Know:**
+---
 
-      * **Configuration:** `/etc/logstash/conf.d/` (This is where you put your `.conf` pipeline files).
-      * **Binaries:** `/usr/share/logstash/bin/` (This is where the `logstash` executable lives).
-      * **Logs:** `/var/log/logstash/` (This is where Logstash writes its *own* operational logs, useful for debugging).
+## 3. Installing Logstash (Basic Setup)
 
-**Important:** Do not `start` the Logstash service yet. It will not do anything without a configuration file.
+Below are the verified Logstash **9.2.1** downloads:
 
-### 4\. Logstash Configuration File Structure
+**RPM (RHEL/CentOS):**
 
-Logstash is configured using simple text files ending in `.conf`, located in `/etc/logstash/conf.d/`.
+```
+https://artifacts.elastic.co/downloads/logstash/logstash-9.2.1-x86_64.rpm
+```
 
-The structure of a `.conf` file directly maps to the pipeline architecture:
+**DEB (Ubuntu/Debian):**
 
-```conf
-# This is a comment
+```
+https://artifacts.elastic.co/downloads/logstash/logstash-9.2.1-amd64.deb
+```
+
+**TAR.GZ (Generic Linux):**
+
+```
+https://artifacts.elastic.co/downloads/logstash/logstash-9.2.1-linux-x86_64.tar.gz
+```
+
+### Install on Ubuntu/Debian
+
+```
+wget https://artifacts.elastic.co/downloads/logstash/logstash-9.2.1-amd64.deb
+sudo dpkg -i logstash-9.2.1-amd64.deb
+```
+
+### Install on RHEL/CentOS
+
+```
+wget https://artifacts.elastic.co/downloads/logstash/logstash-9.2.1-x86_64.rpm
+sudo rpm -ivh logstash-9.2.1-x86_64.rpm
+```
+
+### Start Logstash (package installs)
+
+```
+sudo systemctl start logstash
+sudo systemctl enable logstash
+```
+
+---
+
+## 4. Logstash Configuration File Structure
+
+A Logstash configuration contains **three blocks**:
+
+```
 input {
-  # ... Input plugin configuration ...
+  ...
 }
 
 filter {
-  # ... Filter plugin(s) configuration ...
+  ...
 }
 
 output {
-  # ... Output plugin configuration ...
+  ...
 }
 ```
 
-#### 🚀 Hands-On: "Hello World" Pipeline (Test your install)
+Each block controls a different stage of the pipeline.
 
-This is the most basic pipeline to verify Logstash is working. It reads from your keyboard (`stdin`) and writes to your screen (`stdout`).
+### Example Minimal Config
 
-1.  **Action:** Create your first configuration file.
+```
+input { stdin {} }
 
-    ```bash
-    sudo vi /etc/logstash/conf.d/01-hello.conf
-    ```
+filter {
+  mutate { add_field => { "source" => "terminal" } }
+}
 
-2.  **Action:** Paste the following content:
+output {
+  stdout { codec => rubydebug }
+}
+```
 
-    ```conf
-    input {
-      stdin { }
+Run with:
+
+```
+/bin/logstash -f sample.conf
+```
+
+---
+
+## 5. Common Inputs (file, beats, stdin)
+
+### stdin Input (for learning)
+
+```
+input { stdin {} }
+```
+
+Use this to test patterns manually.
+
+### file Input
+
+```
+input {
+  file {
+    path => "/var/log/app.log"
+    start_position => "beginning"
+  }
+}
+```
+
+> Note: For production, **Filebeat** is recommended instead of the file input.
+
+### beats Input (recommended)
+
+```
+input {
+  beats {
+    port => 5044
+  }
+}
+```
+
+Use when Filebeat ships logs to Logstash.
+
+---
+
+## 6. Common Outputs (Elasticsearch, stdout)
+
+### stdout Output (for debugging)
+
+```
+output {
+  stdout { codec => rubydebug }
+}
+```
+
+### Elasticsearch Output (for 9.x)
+
+```
+output {
+  elasticsearch {
+    hosts => ["http://localhost:9200"]
+    index => "logs-%{+YYYY.MM.dd}"
+  }
+}
+```
+
+Supports API key authentication:
+
+```
+api_key => "YOUR_API_KEY"
+```
+
+---
+
+## 7. Common Filters (grok, mutate, date)
+
+Filters transform incoming data into structured and usable fields.
+
+---
+
+### 7.1 Grok Filter
+
+Grok extracts fields from unstructured text. Logstash includes **hundreds of built-in patterns**.
+
+Example:
+
+```
+filter {
+  grok {
+    match => {
+      "message" => "%{IP:client_ip} %{WORD:action} %{DATA:details}"
     }
+  }
+}
+```
 
-    output {
-      stdout {
-        codec => rubydebug
-      }
-    }
-    ```
+Breakdown:
 
-      * `codec => rubydebug`: This is a special formatter that prints the *full JSON structure* of the event, which is extremely helpful for debugging.
+* `%{IP:client_ip}` → extracts an IP address into field `client_ip`
+* `%{WORD:action}` → extracts a single word like LOGIN/ERROR
+* `%{DATA:details}` → captures everything else
 
-3.  **Action:** Run this config file *directly* from the command line.
+### What if the pattern fails?
 
-      * **Note:** We use `sudo -u logstash` to run as the correct user.
+If a log line does not match the pattern, Logstash adds:
 
-    <!-- end list -->
+```
+"tags": ["_grokparsefailure"]
+```
 
-    ```bash
-    sudo -u logstash /usr/share/logstash/bin/logstash -f /etc/logstash/conf.d/01-hello.conf
-    ```
+You will see this in:
 
-4.  **Action:** Wait for Logstash to start (it can take 30-60 seconds). You will see "Pipeline started".
+* Terminal (rubydebug output)
+* Kibana Discover → search: `tags:"_grokparsefailure"`
 
-5.  **Action:** Type `Hello World` and press **Enter**.
+---
 
-6.  **Analyze the Result:** Logstash will process your input and print the full event to the screen as a structured object:
+### 7.2 Mutate Filter
 
-    ```json
-    {
-        "message": "Hello World",
-      "@version": "1",
-          "host": "your-centos-server.local",
-    "@timestamp": "2025-11-14T12:00:00.000Z"
-    }
-    ```
+Mutate modifies or adds fields.
 
-      * Logstash automatically adds metadata like `@timestamp` and `host`. Your typed "Hello World" was put into the `message` field.
+Example:
 
-7.  Press `CTRL+C` to stop Logstash.
+```
+filter {
+  mutate {
+    rename => { "clientip" => "client_ip" }
+    add_field => { "processed" => "yes" }
+    remove_field => ["agent"]
+  }
+}
+```
 
-### 5\. Common Inputs (file, beats, stdin) (Topic 5)
+---
 
-The `input {}` block defines where data comes from.
+### 7.3 Date Filter
 
-  * **`stdin` (Standard Input):**
+Used to convert timestamps from logs into Logstash’s `@timestamp` field.
 
-      * **Use:** Debugging and testing (as seen in the lab above).
-      * **Code:** `input { stdin { } }`
+Example:
 
-  * **`file`:**
+```
+filter {
+  date {
+    match => ["timestamp", "dd/MMM/YYYY:HH:mm:ss Z"]
+    target => "@timestamp"
+  }
+}
+```
 
-      * **Use:** Reading directly from a log file on the Logstash server. This is a "classic" setup. Logstash handles file rotation and remembers its position (`sincedb`).
-      * **Code:**
-        ```conf
-        input {
-          file {
-            path => "/var/log/my-app/app.log"
-            start_position => "beginning"
-          }
-        }
-        ```
-
-  * **`beats`:**
-
-      * **Use:** This is the **modern, production** method. You do *not* read files directly. Instead, you have 100 servers running Filebeat (Elastic Agent), and they all *ship* their logs to this Logstash server. This input plugin opens a port (e.g., 5044) to listen for that incoming Beats traffic.
-      * **Code:**
-        ```conf
-        input {
-          beats {
-            port => 5044
-          }
-        }
-        ```
-
-### 6\. Common Outputs (Elasticsearch, stdout) (Topic 6)
-
-The `output {}` block defines where the processed data goes.
-
-  * **`stdout` (Standard Output):**
-
-      * **Use:** Debugging. Prints the final, processed event to your console.
-      * **Code:**
-        ```conf
-        output {
-          stdout { codec => rubydebug }
-        }
-        ```
-
-  * **`elasticsearch`:**
-
-      * **Use:** This is the **production** output. It sends the data to your Elasticsearch cluster.
-      * **Code:**
-        ```conf
-        output {
-          elasticsearch {
-            hosts => ["http://localhost:9200"]
-            index => "access-logs-%{+YYYY.MM.dd}"
-          }
-        }
-        ```
-      * **Key Parameters:**
-          * `hosts`: An array of your Elasticsearch node addresses.
-          * `index`: The name of the index to write to. Notice the `%{+YYYY.MM.dd}` pattern. This tells Logstash to automatically create **time-based indices**, such as `access-logs-2025.11.14`.
-
-### 7\. Common Filters (grok, mutate, date) (Topic 7)
-
-This is the `filter {}` block, the most powerful stage. Filters transform the data.
-
-  * **`mutate`:**
-
-      * **Use:** The "Swiss Army Knife" for simple, fast transformations.
-      * **Code:**
-        ```conf
-        filter {
-          mutate {
-            # Rename a field
-            rename => { "http_host" => "http.request.referrer" }
-            # Add a new field
-            add_field => { "environment" => "production" }
-            # Remove sensitive or useless fields
-            remove_field => [ "password", "debug_info" ]
-            # Convert a data type (e.g., from your access-logs schema)
-            convert => { "http.response.status_code" => "integer" }
-          }
-        }
-        ```
-
-  * **`date`:**
-
-      * **Use:** To parse a custom date from your log message and use it as the main `@timestamp`. If your log is from 3 days ago, you need the `@timestamp` to be 3 days ago.
-      * **Code:** (Assumes your log has a field `log_date: "Nov 14 2025 12:30:01"`)
-        ```conf
-        filter {
-          date {
-            match => [ "log_date", "MMM dd yyyy HH:mm:ss" ]
-            target => "@timestamp"
-          }
-        }
-        ```
-
-  * **`grok`:**
-
-      * **Use:** The "superstar" of Logstash. It uses regular expressions (regex) to parse an unstructured `message` string into a fully structured object. This is how you *create* the fields for your `access-logs` schema.
-      * **The Problem:** `message: "198.51.100.1 GET /login 401 55"`
-      * **The Goal:**
-        ```json
-        {
-          "client_ip": "198.51.100.1",
-          "http_method": "GET",
-          "url_path": "/login",
-          "http_status_code": 401,
-          "bytes": 55
-        }
-        ```
-      * **The `grok` Pattern:** Grok uses built-in patterns: `%{IP}`, `%{WORD}`, `%{URIPATH}`, `%{NUMBER}`.
-      * **The Code:**
-        ```conf
-        filter {
-          grok {
-            match => { 
-              "message" => "%{IP:client.ip} %{WORD:http.request.method} %{URIPATH:url.path} %{NUMBER:http.response.status_code:int} %{NUMBER:http.response.body.bytes:int}"
-            }
-          }
-        }
-        ```
-      * **Explanation:**
-          * `%{IP:client.ip}`: Find an IP address and save it to a new field called `client.ip`.
-          * `%{NUMBER:http.response.status_code:int}`: Find a NUMBER, save it as `http.response.status_code`, and automatically convert it to an `int`(integer).
+Correct timestamp parsing is essential for time-based Elasticsearch indexing.

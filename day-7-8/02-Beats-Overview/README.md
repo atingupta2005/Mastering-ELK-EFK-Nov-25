@@ -1,232 +1,522 @@
-## 📅 Day 8: Beats Overview
+# Beats Overview (Beginner to Intermediate Guide for Elastic Stack 9.x)
 
-### 1\. What are Beats (Lightweight Shippers)? (Topic 8)
+# 8. What Are Beats? (Lightweight Data Shippers)
 
-**Beats** are a family of **lightweight, special-purpose data shippers**. They are small, server-side agents, written in Go, that are designed to be installed on your source servers (e.g., web servers, database servers) to collect and "ship" data to a central location.
+**Beats** are a family of **lightweight, single‑purpose data shippers** created by Elastic. They collect data from your servers, applications, or systems and forward it to **Elasticsearch** or **Logstash**.
 
-Their core design principle is to be "lightweight," meaning they use minimal CPU and memory. They are built to do *one job* and do it reliably.
+### Key Characteristics
 
-The original Beats family included:
+* Small, efficient binaries written in Go
+* Zero dependencies
+* Low CPU and memory usage
+* Purpose-specific (each Beat solves a different problem)
+* Often run directly on your servers or containers
 
-  * **Filebeat:** Collects logs from files.
-  * **Metricbeat:** Collects system and service metrics.
-  * **Packetbeat:** Monitors network packet data.
-  * **Winlogbeat:** Collects Windows Event Logs.
-  * **Auditbeat:** Collects Linux audit framework data.
-  * **Heartbeat:** Monitors service uptime (like a `ping` tool).
+### Why Beats Instead of Logstash?
 
------
+Beats are preferred at edge/host level because:
 
-### The Evolution to Elastic Agent (A Critical 9.x Concept)
+* They are lightweight (low resource usage)
+* Require no JVM
+* Can handle log rotation safely
+* Provide reliability using **file harvesting** and **backpressure handling**
 
-In modern Elastic Stack (versions 8.x and 9.x), the concept of "Beats" has evolved into the **Elastic Agent**.
+---
 
-  * **The Old Way (Beats):** To get logs *and* metrics from a server, you had to install and manage *two* separate agents: Filebeat and Metricbeat, each with its own configuration file.
-  * **The New Way (Elastic Agent):** You install **one single agent** (the Elastic Agent) on each server. This single agent can do *everything*—collect logs, collect metrics, monitor uptime, and even provide endpoint security.
+# 9. Filebeat – Overview & Use Cases
 
-This new Elastic Agent is typically managed remotely by **Fleet**, a UI inside Kibana. You no longer edit local `.yml` files on each server. Instead, you create a central "policy" in Kibana (e.g., "Collect Nginx logs and System metrics"), and Fleet tells all 1,000 of your agents to apply that policy.
+Filebeat is used to **collect and ship log files**. It reads log files line by line, detects changes, handles rotations, and forwards logs efficiently.
 
-While "Filebeat" and "Metricbeat" still exist as standalone binaries (for advanced or legacy use cases), their *functionality* is now primarily consumed as part of the unified **Elastic Agent**.
+## How Filebeat Works (Internal Architecture)
 
------
-
-### 2\. Filebeat – Overview & Use Cases (Topic 9)
-
-**Filebeat** is the most popular and widely used Beat. Its *only* job is to read lines from log files and send them to Elasticsearch or Logstash.
-
-**Core Features:**
-
-  * **Lightweight:** Has a very small resource footprint.
-  * **Resilient:** It stores its "place" in a registry file. If the server or Filebeat restarts, it knows exactly where it left off, so no data is lost.
-  * **Reliable:** Guarantees "at-least-once" delivery.
-  * **Handles Log Rotation:** Automatically handles log files that are rotated, gzipped, and deleted.
-
-**Common Use Cases:**
-
-  * **Application Logs:** Tailing `my-app.log` from your custom applications.
-  * **Web Server Logs:** Collecting `access.log` and `error.log` from Nginx, Apache, or IIS.
-  * **System Logs:** Collecting system-level logs like `/var/log/syslog` or `/var/log/auth.log`.
-  * **Database Logs:** Collecting slow query logs or error logs from MySQL, PostgreSQL, etc.
-
-**Filebeat Modules:**
-For common log types like Nginx, Filebeat has "modules." If you enable the `nginx` module, Filebeat will:
-
-1.  Automatically know the default paths for Nginx logs.
-2.  Know how to *parse* the Nginx log line, converting it from a string to structured JSON.
-3.  Automatically ship a pre-built Kibana dashboard for visualizing Nginx logs.
-
------
-
-### 3\. Metricbeat – Overview & Use Cases (Topic 10)
-
-**Metricbeat** is a lightweight shipper for **metrics** (time-series numerical data), not logs.
-
-**Core Features:**
-
-  * **Module-Based:** Metricbeat works using "modules" that know how to connect to and collect data from specific systems and services.
-  * **Lightweight:** Designed to run on every server in your fleet to provide full-stack monitoring.
-  * **Time-Series Optimized:** All data is pre-formatted with timestamps, host information, and metric types, ready for visualization in Kibana.
-
-**Common Use Cases & Modules:**
-
-  * **`system` Module (Most Common):**
-
-      * **Use:** Collects core operating system metrics.
-      * **Metrics:**
-          * `cpu.usage` (user, system, idle)
-          * `memory.used` / `memory.free`
-          * `diskio.read_bytes` / `diskio.write_bytes`
-          * `network.in_bytes` / `network.out_bytes`
-
-  * **`docker` Module:**
-
-      * **Use:** Connects to the Docker socket to collect metrics about all running containers.
-      * **Metrics:** Container CPU usage, memory limits, network I/O.
-
-  * **`nginx` Module:**
-
-      * **Use:** Connects to the Nginx `stub_status` endpoint.
-      * **Metrics:** `active_connections`, `accepts`, `handled`, `requests`.
-
-  * **`elasticsearch` Module:**
-
-      * **Use:** Monitors the health and performance of your Elasticsearch cluster itself.
-      * **Metrics:** Cluster status, JVM heap usage, indexing rates, query latency.
-
------
-
-### 4\. How Beats Send Data to Elasticsearch/Logstash (Topic 11)
-
-There are two primary architectural patterns for where Beats (or the Elastic Agent) send their data.
-
-#### Path 1: Direct to Elasticsearch (The Simple, Modern Way)
-
-This is the most common and recommended setup for most use cases.
-
-`[Filebeat/Agent] ---> [Elasticsearch Cluster]`
-
-  * **How it works:** The agent/beat is configured with the Elasticsearch `hosts` and API key. It uses a built-in "ingest pipeline" to parse and pre-process the data before indexing.
-  * **Pros:**
-      * Very simple, fewer moving parts.
-      * Very fast.
-      * The built-in "modules" (like the Nginx module) handle all parsing.
-  * **Cons:**
-      * Less flexible. If you have a custom, non-standard log format, the agent can't parse it.
-
-#### Path 2: Via Logstash (The "Advanced" Way)
-
-This setup is used when you need complex, server-side data transformation.
-
-`[Filebeat/Agent] ---> [Logstash Server] ---> [Elasticsearch Cluster]`
-
-  * **How it works:**
-    1.  The Filebeat/Agent's output is *not* Elasticsearch. It is set to point to your Logstash server (e.g., `output.logstash.hosts: ["logstash-server:5044"]`).
-    2.  The Logstash server is configured with a `beats` **input** plugin, listening on port `5044`.
-    3.  Logstash runs its **filter** stage (e.g., `grok`, `mutate`, `date`, `enrich`) to perform heavy-duty parsing and transformation.
-    4.  Logstash has an `elasticsearch` **output** plugin that sends the final, processed data to the cluster.
-  * **Pros:**
-      * Extremely powerful and flexible.
-      * Can parse *any* data format.
-      * Can enrich data (e.g., GeoIP, database lookups).
-      * Can route data to multiple outputs (e.g., Elasticsearch and an S3 archive).
-  * **Cons:**
-      * More complex to manage (another service to maintain).
-      * Slower, as it adds an extra "hop" for the data.
-
------
-
-### 5\. Basic Filebeat Installation (Standalone Method) (Topic 12)
-
-This hands-on lab shows how to install and run **standalone Filebeat 9.x**. This is the "manual" or "legacy" method, where you configure the `.yml` file directly on the server.
-
-**Prerequisite:** A CentOS 7/8/9 server and a running Elasticsearch cluster.
-
-#### 🚀 Hands-On: Install and Run Filebeat
-
-**Step 1: Install Filebeat**
-
-```bash
-# Import the Elastic GPG key
-sudo rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch
-
-# Add the Elastic 9.x repository (if not already done)
-sudo vi /etc/yum.repos.d/elastic-9.x.repo
-(Paste the `[elastic-9.x]` repo content)
-
-# Install the filebeat package
-sudo yum install filebeat
+```
+Log file → Harvester → Spooler → Output (ES / Logstash)
 ```
 
-**Step 2: Configure `filebeat.yml`**
-This is the main configuration file.
+### 1. Harvesting
 
-```bash
-sudo vi /etc/filebeat/filebeat.yml
+Harvesting is the process where Filebeat reads each file line-by-line.
+
+* One harvester per file
+* Tracks file offset
+* Detects rotations
+* Avoids re-reading logs
+
+### 2. Spooler
+
+The spooler buffers log lines into batches before sending.
+
+* Controls throughput
+* Reduces network load
+* Works with backpressure
+
+### 3. Backpressure Handling
+
+If Elasticsearch or Logstash slows down, Filebeat applies **backpressure**:
+
+* Pauses sending new batches
+* Continues tracking file positions
+* Prevents data loss and overload
+
+This makes Filebeat highly reliable.
+
+## Use Cases
+
+* Application logs
+* Web server logs (Apache/Nginx)
+* System logs
+* Docker/Kubernetes logs
+
+## Example Input
+
 ```
-
-You need to configure two main sections:
-
-**1. `filebeat.inputs` (Where to get data):**
-Find this section. By default, it's disabled. Enable it and tell it to watch `/var/log/syslog`.
-
-```yml
 filebeat.inputs:
-- type: filestream
-  id: my-syslog-input
-  enabled: true
-  paths:
-    - /var/log/messages
-    - /var/log/syslog
+  - type: log
+    paths:
+      - /var/log/nginx/access.log
 ```
 
-  * **`type: filestream`**: This is the new, more powerful input ID (replacing the old `log` type).
-  * **`paths`**: The log files you want to tail.
+## Output to Logstash
 
-**2. `output.elasticsearch` (Where to send data):**
-Find this section. Comment out the `output.logstash` section. Uncomment and edit the `output.elasticsearch` section.
+```
+output.logstash:
+  hosts: ["localhost:5044"]
+```
 
-```yml
-# ---------------------------- Logstash Output -----------------------------
-# output.logstash:
-#   hosts: ["localhost:5044"]
+## Output to Elasticsearch
 
-# -------------------------- Elasticsearch Output --------------------------
+Supports both HTTP and HTTPS.
+
+```
 output.elasticsearch:
-  hosts: ["http://YOUR_ELASTICSEARCH_IP:9200"]
-  
-  # Use an API Key (Recommended for 9.x)
-  # api_key: "id:secret"
-  
-  # Or, use username/password (Less Secure)
-  # username: "elastic"
-  # password: "YOUR_PASSWORD"
+  hosts: ["http://localhost:9200"]
 ```
 
-*Note: For a 9.x lab, the easiest way is to disable security in `elasticsearch.yml` (`xpack.security.enabled: false`) and just use the `hosts` line. For production, you *must* use `api_key` or `username/password`.*
+## Passing Credentials
 
-**Step 3: Test Configuration**
-Filebeat can check your `.yml` file for errors.
-
-```bash
-sudo filebeat test config -e
+```
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+  username: "elastic"
+  password: "StrongPassword"
 ```
 
-*If it says "Config OK", you are ready.*
+Or with API key:
 
-**Step 4: Run Filebeat**
+```
+api_key: "BASE64_KEY"
+```
 
-```bash
-# Enable the service to start on boot
-sudo systemctl enable filebeat
+# 10. Metricbeat – Overview & Use Cases
 
-# Start the service now
+Metricbeat – Overview & Use Cases
+Metricbeat collects **metrics and statistics** from systems and services.
+
+It does NOT ship logs — instead, it ships **numbers, counters, and performance data**.
+
+## What Metricbeat Can Monitor
+
+### ✓ Operating System Metrics
+
+* CPU usage
+* Memory usage
+* Disk I/O
+* Network I/O
+
+### ✓ Service Metrics
+
+Metricbeat modules include integrations for:
+
+* MySQL
+* PostgreSQL
+* Redis
+* Kafka
+* Nginx
+* Apache
+* Docker
+* Kubernetes
+* Elasticsearch
+* Logstash
+* Systemd
+
+### Why Use Metricbeat?
+
+* Real-time system performance visibility
+* Automatic dashboards provided by Elastic
+* Helps in monitoring server health
+* Useful for SREs & DevOps
+
+## Example: Collect System Metrics
+
+```
+metricbeat.modules:
+  - module: system
+    metricsets: ["cpu", "load", "memory", "network"]
+    period: 10s
+```
+
+## Example: Collect Nginx Metrics
+
+```
+metricbeat.modules:
+  - module: nginx
+    metricsets: ["stubstatus"]
+    hosts: ["http://localhost:8080"]
+```
+
+## Example Output to Elasticsearch
+
+```
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+```
+
+---
+
+# 11. How Beats Send Data to Elasticsearch/Logstash
+
+Beats use a **built-in output module** to send events.
+Data transmission is:
+
+* Secure (TLS supported)
+* Reliable (automatic retries)
+* Backpressure‑aware
+
+## Two Possible Paths
+
+```
+Beats → Elasticsearch
+Beats → Logstash → Elasticsearch
+```
+
+## When to Send Directly to Elasticsearch
+
+* Logs are clean and structured
+* Only minimal parsing needed
+* Want minimal latency
+
+Example:
+
+```
+output.elasticsearch:
+  hosts: ["http://es01:9200"]
+```
+
+## When to Use Logstash
+
+* Logs need parsing (grok, mutate, date)
+* Logs need routing/forking
+* Need custom fields
+* Want to enrich logs before indexing
+
+Example:
+
+```
+output.logstash:
+  hosts: ["logstash01:5044"]
+```
+
+## Protocol Used
+
+Beats communicate over the **Beats protocol** using TCP.
+
+* Default Logstash input: `beats { port => 5044 }`
+* Supports TLS encryption
+
+---
+
+# 12. Basic Filebeat Installation
+
+Here is the simplest installation process for Filebeat.
+
+## Step 1: Download Filebeat (Example: 9.x)
+
+### Debian/Ubuntu
+
+```
+wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-9.2.1-amd64.deb
+sudo dpkg -i filebeat-9.2.1-amd64.deb
+```
+
+### RHEL/CentOS
+
+```
+wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-9.2.1-x86_64.rpm
+sudo rpm -ivh filebeat-9.2.1-x86_64.rpm
+```
+
+---
+
+## Step 2: Enable a Simple Log Input
+
+```
+filebeat.inputs:
+  - type: log
+    paths:
+      - /var/log/syslog
+```
+
+---
+
+## Step 3: Choose Output
+
+### Send to Elasticsearch
+
+```
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+```
+
+### Send to Logstash
+
+```
+output.logstash:
+  hosts: ["localhost:5044"]
+```
+
+---
+
+## Step 4: Start Filebeat
+
+```
 sudo systemctl start filebeat
+sudo systemctl enable filebeat
 ```
 
-**Step 5: Verify in Kibana**
+---
 
-1.  Go to Kibana. It will take a minute for data to arrive.
-2.  Filebeat auto-creates an index pattern named `filebeat-*`.
-3.  Go to **Discover**.
-4.  Switch your index pattern to **`filebeat-*`**.
-5.  You should see your server's `/var/log/syslog` or `/var/log/messages` data flowing in.
+## Step 5: Verify Filebeat Is Working
+
+### Check service status
+
+```
+sudo systemctl status filebeat
+```
+
+### Check logs
+
+```
+sudo tail -f /var/log/filebeat/filebeat
+```
+
+### Check indices in Elasticsearch
+
+```
+curl http://localhost:9200/_cat/indices?v
+```
+
+---
+
+---
+
+# 13. Important Internal Concepts in Beats (Backpressure, Harvesting, Spooler)
+
+This section explains the internal mechanisms that make Beats reliable and efficient.
+
+## 13.1 Backpressure Handling
+
+Backpressure occurs when the output (Elasticsearch or Logstash) becomes slow or overloaded.
+
+Beats automatically detects this and **slows down** sending data to avoid overwhelming the destination.
+
+### How Backpressure Works
+
+* Beats sends data in batches.
+* If Elasticsearch/Logstash responds slowly or rejects requests, Beats **pauses** sending more data.
+* Harvesters continue reading logs but buffer data until the output recovers.
+
+### Example Scenario
+
+If Elasticsearch is overloaded:
+
+* Filebeat stops pushing new batches
+* Harvester continues watching files
+* Registrar tracks offsets
+* No logs are lost
+
+This behaviour prevents:
+
+* Data loss
+* Server overload
+* Uncontrolled retries
+
+---
+
+## 13.2 Harvesting
+
+Harvesting is the process by which Filebeat **reads log files line-by-line**.
+
+### Key Responsibilities
+
+* Read new lines appended to a file
+* Detect when a file is rotated
+* Avoid re-reading old lines
+
+### Example Flow
+
+```
+/var/log/app.log → Harvester → Spooler → Output
+```
+
+### Multiple Harvesters
+
+If Filebeat monitors 10 log files, it may launch 10 harvesters (one per file).
+
+Each harvester manages:
+
+* File pointer position
+* Newline detection
+* State management
+
+---
+
+## 13.3 Spooler (Event Buffer)
+
+The spooler collects events from harvesters and groups them into batches.
+
+### Why Spooler Exists
+
+* Improves performance
+* Reduces network calls
+* Enables backpressure handling
+
+### Flow
+
+```
+Harvester → Spooler (batch N events) → Output
+```
+
+### Example
+
+If spool size is 2048:
+
+* Filebeat collects up to 2048 log lines
+* Sends them as a batch to Elasticsearch/Logstash
+
+This approach reduces overhead and increases throughput.
+
+---
+
+# 14. Can Beats Work with Non-HTTPS Elasticsearch?
+
+Yes. Beats can send data to **HTTP** or **HTTPS**.
+
+### Example: Using HTTP (Not Secure)
+
+```
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+```
+
+### Example: Using HTTPS (Secure)
+
+```
+output.elasticsearch:
+  hosts: ["https://es01.mydomain.com:9200"]
+  ssl.certificate_authorities: ["/etc/filebeat/certs/ca.crt"]
+```
+
+For production, HTTPS is strongly recommended.
+
+---
+
+# 15. How to Pass User Credentials to Elasticsearch
+
+Beats supports:
+
+* Username/password authentication
+* API key authentication
+
+## 15.1 Username & Password
+
+```
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+  username: "elastic"
+  password: "MyStrongPassword"
+```
+
+## 15.2 API Key (More Secure)
+
+```
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+  api_key: "BASE64_API_KEY"
+```
+
+API keys are preferred because:
+
+* No need to expose user credentials
+* Permissions can be restricted
+
+---
+
+# 16. Important Configuration File Paths
+
+Below are the standard paths for Filebeat (Linux package installations).
+
+### 16.1 Main Configuration
+
+```
+/etc/filebeat/filebeat.yml
+```
+
+This is where you define:
+
+* inputs
+* modules
+* outputs
+* processors
+
+### 16.2 Filebeat Modules Directory
+
+```
+/etc/filebeat/modules.d/
+```
+
+Each `.yml` file inside represents a module such as:
+
+* system
+* nginx
+* apache
+* mysql
+
+Enable a module:
+
+```
+sudo filebeat modules enable nginx
+```
+
+### 16.3 Filebeat Logs
+
+```
+/var/log/filebeat/filebeat
+```
+
+Used for troubleshooting and verifying ingestion.
+
+### 16.4 Filebeat Binary
+
+```
+/usr/bin/filebeat
+```
+
+Run directly for debugging:
+
+```
+filebeat -e
+```
+
+### 16.5 Registry File (State Tracking)
+
+```
+/var/lib/filebeat/registry/filebeat/
+```
+
+This contains:
+
+* file offsets
+* inode tracking
+* state information
+
+This ensures logs are **not duplicated** even after restart.

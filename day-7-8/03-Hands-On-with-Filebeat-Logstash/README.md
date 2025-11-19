@@ -1,253 +1,268 @@
-## 📅 Day 8: Hands-On with Filebeat & Logstash
+# Hands-On Guide: Filebeat & Logstash (Elastic Stack 9.x, CentOS 8 Stream Compatible)
 
-**Objective:** This is a comprehensive, hands-on lab that demonstrates the two primary architectures for data ingestion.
+## Network Topology
 
-1.  **Path 1:** Filebeat -\> Elasticsearch (Simple, fast, for pre-formatted data)
-2.  **Path 2:** Filebeat -\> Logstash -\> Elasticsearch (Powerful, flexible, for complex data)
+Below is an example setup (replace IPs as needed):
 
-For this lab, we will install and configure Filebeat and Logstash on the **same CentOS server** as your Elasticsearch/Kibana node. In a production environment, these would be on separate machines.
+| Component                   | Example IP                  | Description                  |
+| --------------------------- | --------------------------- | ---------------------------- |
+| Elasticsearch Server        | 192.168.1.10                | Receives and stores logs     |
+| Logstash Server             | 192.168.1.20                | Processes logs from Filebeat |
+| Kibana UI                   | 192.168.1.10                | Visualization console        |
+| Filebeat Nodes (18 systems) | 192.168.1.30 – 192.168.1.47 | Servers generating logs      |
 
-**Prerequisite:**
+Replace these IPs with your actual network IPs.
 
-  * Your Elasticsearch and Kibana services are running and accessible.
-  * You have `sudo` access on your CentOS server.
-  * The Elastic YUM repository is already configured (from the Elasticsearch install).
+---
 
------
+# 13. Install Filebeat on Local System (CentOS 8 Stream)
 
-### 1\. Install Filebeat on Local System (Topic 13)
+Run the following commands **on each Filebeat node** (18 machines).
 
-First, we will install the Filebeat agent.
+### Download and Install
 
-#### 🚀 Hands-On: Install Filebeat
+```bash
+wget https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-9.2.1-x86_64.rpm
+sudo rpm -ivh filebeat-9.2.1-x86_64.rpm
+```
 
-1.  **Action:** Open your server's terminal.
-2.  **Action:** Install the `filebeat` package using `yum`.
-    ```bash
-    sudo yum install filebeat
-    ```
-3.  **Action:** Enable the Filebeat service so it can start on boot.
-    ```bash
-    sudo systemctl enable filebeat
-    ```
+### Enable and Start Filebeat
 
-**Do not start the service yet.** We must configure it first.
+```bash
+sudo systemctl enable filebeat
+sudo systemctl start filebeat
+```
 
------
+### Verify Installation
 
-### 2\. Configure Filebeat to Read Log Files (Topic 14)
+```bash
+filebeat version
+sudo systemctl status filebeat
+```
 
-By default, Filebeat is configured to use "modules" to collect system logs. For this lab, we want to disable that and tell it to read a *specific* custom log file.
+---
 
-#### 🚀 Hands-On: Configure Filebeat Input
+# 14. Configure Filebeat to Read Log Files
 
-**Step 1: Create a Custom Log File to Monitor**
+Main Filebeat config file:
 
-1.  **Action:** Let's create a new log file that our "custom application" will write to.
-    ```bash
-    sudo touch /var/log/my-app.log
-    sudo chown root:root /var/log/my-app.log
-    ```
-2.  **Action:** Let's simulate our app writing two log lines to this file.
-    ```bash
-    sudo sh -c 'echo "2025-11-14T11:00:00 [INFO] Application started" >> /var/log/my-app.log'
-    sudo sh -c 'echo "2025-11-14T11:01:00 [ERROR] Failed to connect to database" >> /var/log/my-app.log'
-    ```
+```
+/etc/filebeat/filebeat.yml
+```
 
-**Step 2: Disable Default Modules**
+### Create a Sample Log File
 
-1.  **Action:** Filebeat loads extra configs from `/etc/filebeat/modules.d/`. We must disable the default `system.yml` module so we *only* get the logs we ask for.
-    ```bash
-    sudo mv /etc/filebeat/modules.d/system.yml /etc/filebeat/modules.d/system.yml.disabled
-    ```
+```bash
+sudo mkdir -p /var/log/myapp
+sudo bash -c 'echo "2025-01-01 INFO App started" >> /var/log/myapp/app.log'
+```
 
-**Step 3: Edit the Main `filebeat.yml`**
+### Configure Filebeat Log Input
 
-1.  **Action:** Open the main configuration file with `vi`.
-    ```bash
-    sudo vi /etc/filebeat/filebeat.yml
-    ```
-2.  **Action:** Find the `filebeat.inputs:` section. It will be commented out.
-3.  **Action:** Delete the example content and add the following configuration. This tells Filebeat to find and read our new log file.
-    ```yml
-    filebeat.inputs:
-    - type: filestream
-      id: my-app-logs
-      enabled: true
-      paths:
-        - /var/log/my-app.log
-    ```
-      * **`type: filestream`**: This is the modern, correct input type for log files.
-      * **`paths`**: The specific file(s) to monitor.
+Edit the config:
 
-**Do not close the file yet.** We must now configure the *output*.
+```bash
+sudo nano /etc/filebeat/filebeat.yml
+```
 
------
+Replace input section with:
 
-### 3\. Send Data Directly to Elasticsearch (Topic 15)
+```yaml
+filebeat.inputs:
+  - type: log
+    id: myapp-logs
+    enabled: true
+    paths:
+      - /var/log/myapp/*.log
+      - /var/log/myapp/*.json
+```
 
-First, we will test **Path 1**. We will tell Filebeat to send data directly to Elasticsearch.
+Save & restart Filebeat:
 
-#### 🚀 Hands-On: Configure the Elasticsearch Output
+```bash
+sudo systemctl restart filebeat
+```
 
-1.  **Action:** In your open `filebeat.yml` file, scroll down to the "Outputs" section.
-2.  **Action:**
-      * **Comment out** the `output.logstash:` section by adding a `#` to the front of the lines.
-      * **Uncomment** the `output.elasticsearch:` section.
-3.  **Action:** Edit the `output.elasticsearch:` section to look like this (assuming your Elasticsearch is on `localhost` and has security disabled for this lab):
-    ```yml
-    # ---------------------------- Logstash Output -----------------------------
-    # output.logstash:
-    #   hosts: ["localhost:5044"]
+### Generate Logs for Testing
 
-    # -------------------------- Elasticsearch Output --------------------------
-    output.elasticsearch:
-      hosts: ["http://localhost:9200"]
-      index: "filebeat-direct-%{+YYYY.MM.dd}"
-    ```
-      * **`hosts`**: Points to your Elasticsearch server.
-      * **`index`**: We set a custom index name, `filebeat-direct...`, so we can find this data easily in Kibana.
-4.  **Action:** Save and quit the file (`:wq`).
+```bash
+sudo bash -c 'echo "2025-01-01 ERROR Something failed" >> /var/log/myapp/app.log'
+sudo bash -c 'echo "2025-01-01 DEBUG Debug message" >> /var/log/myapp/app.log'
+```
 
-**Step 2: Test and Run**
+---
 
-1.  **Action (Test):** Test your configuration for typos.
-    ```bash
-    sudo filebeat test config -e
-    ```
-    *Result: If you see "Config OK", you are good to go.*
-2.  **Action (Run):** Start the Filebeat service.
-    ```bash
-    sudo systemctl start filebeat
-    ```
-3.  **Action (Verify):** Check the Filebeat logs to see it running.
-    ```bash
-    sudo journalctl -u filebeat -f
-    ```
-    *You should see messages about "Harvester started" and "Connected to Elasticsearch".*
+# 15. Send Data Directly to Elasticsearch
 
------
+This setup is for when Filebeat sends logs **without Logstash**.
 
-### 4\. Send Data Via Logstash (Topic 16)
+### Edit Filebeat Output
 
-Now, we will test **Path 2**. We will re-route our data through Logstash. This requires two steps:
+```bash
+sudo nano /etc/filebeat/filebeat.yml
+```
 
-1.  Create a Logstash pipeline to *receive* the data.
-2.  Re-configure Filebeat to *send* data to Logstash.
+Update the output section:
 
-#### 🚀 Hands-On: Configure and Run the Logstash Pipeline
+```yaml
+output.elasticsearch:
+  hosts: ["http://192.168.1.10:9200"]
+  username: "elastic"
+  password: "YourStrongPassword"
+```
 
-**Step 1: Install Logstash**
+Disable Logstash output:
 
-1.  **Action:** If you haven't already, install Logstash.
-    ```bash
-    sudo yum install logstash
-    ```
+```yaml
+output.logstash:
+  enabled: false
+```
 
-**Step 2: Create a Logstash Pipeline for Beats**
+Restart Filebeat:
 
-1.  **Action:** Create a new Logstash configuration file.
-    ```bash
-    sudo vi /etc/logstash/conf.d/02-beats-input.conf
-    ```
-2.  **Action:** Paste the following configuration. This tells Logstash to **listen on port 5044** (the standard for Beats), add a *new field* to prove it worked, and send the data to a *new index*.
-    ```conf
-    input {
-      beats {
-        port => 5044
-      }
-    }
+```bash
+sudo systemctl restart filebeat
+```
 
-    filter {
-      # This filter adds a new field, so we can prove
-      # the log passed through Logstash.
-      mutate {
-        add_field => { "pipeline_path" => "filebeat-to-logstash" }
-      }
-    }
+### Verify Elasticsearch Received Logs
 
-    output {
-      elasticsearch {
-        hosts => ["http://localhost:9200"]
-        index => "logstash-from-beats-%{+YYYY.MM.dd}"
-      }
-    }
-    ```
-3.  **Action:** Start the Logstash service.
-    ```bash
-    sudo systemctl enable logstash
-    sudo systemctl start logstash
-    ```
-    *(Logstash can take 1-2 minutes to start up. Use `sudo systemctl status logstash` to check on it.)*
+```bash
+curl -X GET "http://192.168.1.10:9200/_cat/indices?v" | grep filebeat
+```
 
-**Step 3: Re-configure Filebeat to Send to Logstash**
+---
 
-1.  **Action:** Go back and edit your Filebeat config.
-    ```bash
-    sudo vi /etc/filebeat/filebeat.yml
-    ```
-2.  **Action:** Go to the "Outputs" section.
-3.  **Action:**
-      * **Uncomment** the `output.logstash:` section.
-      * **Comment out** the `output.elasticsearch:` section.
-4.  **Action:** Your configuration should now look like this:
-    ```yml
-    # ---------------------------- Logstash Output -----------------------------
-    output.logstash:
-      hosts: ["localhost:5044"]
+# 16. Send Data via Logstash (Recommended for Parsing)
 
-    # -------------------------- Elasticsearch Output --------------------------
-    # output.elasticsearch:
-    #   hosts: ["http://localhost:9200"]
-    #   index: "filebeat-direct-%{+YYYY.MM.dd}"
-    ```
-5.  **Action:** Save and quit the file (`:wq`).
+This is the preferred production setup.
 
-**Step 4: Restart Filebeat**
+## Step 1: Configure Filebeat to Send Data to Logstash
 
-1.  **Action:** Filebeat must be restarted to load the new config.
-    ```bash
-    sudo systemctl restart filebeat
-    ```
+```bash
+sudo nano /etc/filebeat/filebeat.yml
+```
 
-**Step 5: Add a New Log Line**
+Update output:
 
-1.  **Action:** Filebeat has already sent the first two log lines (to Path 1). Let's add a *new* line to our log file, which Filebeat will detect and send down Path 2.
-    ```bash
-    sudo sh -c 'echo "2025-11-14T11:05:00 [WARN] This log went through Logstash" >> /var/log/my-app.log'
-    ```
+```yaml
+output.logstash:
+  hosts: ["192.168.1.20:5044"]
+```
 
------
+Disable Elasticsearch output:
 
-### 5\. Explore Logs Ingested in Kibana Discover (Topic 17)
+```yaml
+output.elasticsearch:
+  enabled: false
+```
 
-Now we go to Kibana to verify *both* paths worked.
+Restart Filebeat:
 
-#### 🚀 Hands-On: Explore in Kibana
+```bash
+sudo systemctl restart filebeat
+```
 
-**Step 1: Create Index Pattern for Path 1**
+---
 
-1.  **Action:** Go to **Stack Management** -\> **Index Patterns** -\> **Create index pattern**.
-2.  **Name:** `filebeat-direct-*`
-3.  **Next step**, select **`@timestamp`** as the time field, and **Create**.
-4.  **Action:** Go to **Discover**. Select the `filebeat-direct-*` pattern.
-5.  **Analyze:** You will see the *first two* log lines:
-      * `"message": "2025-11-14T11:00:00 [INFO] Application started"`
-      * `"message": "2025-11-14T11:01:00 [ERROR] Failed to connect to database"`
-      * Note that the `message` is a single, unparsed line. Filebeat just shipped the raw string.
+# Step 2: Install Logstash 9.2.1 on Logstash Server (192.168.1.20)
 
-**Step 2: Create Index Pattern for Path 2**
+Run these commands **on the Logstash server only**.
 
-1.  **Action:** Go to **Stack Management** -\> **Index Patterns** -\> **Create index pattern**.
-2.  **Name:** `logstash-from-beats-*`
-3.  **Next step**, select **`@timestamp`** as the time field, and **Create**.
-4.  **Action:** Go to **Discover**. Select the new `logstash-from-beats-*` pattern.
-5.  **Analyze:** You will see the *third* log line you added:
-      * `"message": "2025-11-14T11:05:00 [WARN] This log went through Logstash"`
-6.  **Action: The Final Proof:**
-      * Expand this log document by clicking the `>` caret.
-      * Scroll through the **Table** of fields.
-      * **Result:** You will see a field: **`pipeline_path: "filebeat-to-logstash"`**.
-      * This *proves* the log was successfully received by Filebeat, sent to Logstash, processed by the `mutate` filter, and then indexed into Elasticsearch.
+### Download and Install Logstash
 
-You have now successfully configured and verified both primary ingestion architectures.
+```bash
+wget https://artifacts.elastic.co/downloads/logstash/logstash-9.2.1-x86_64.rpm
+sudo rpm -ivh logstash-9.2.1-x86_64.rpm
+```
+
+### Enable and Start Logstash
+
+```bash
+sudo systemctl enable logstash
+sudo systemctl start logstash
+```
+
+### Verify Installation
+
+```bash
+logstash --version
+sudo systemctl status logstash
+```
+
+---
+
+# Step 3: Configure Logstash Input → Filter → Output
+
+Create Logstash config:
+
+```bash
+sudo nano /etc/logstash/conf.d/01-beats.conf
+```
+
+Paste:
+
+```ruby
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  mutate {
+    add_tag => ["from_filebeat"]
+  }
+}
+
+output {
+  elasticsearch {
+    hosts => ["http://192.168.1.10:9200"]
+    index => "logstash-beats-%{+YYYY.MM.dd}"
+  }
+  stdout { codec => rubydebug }
+}
+```
+
+Restart Logstash:
+
+```bash
+sudo systemctl restart logstash
+```
+
+### Validate Logstash Listening on Port 5044
+
+```bash
+sudo ss -tulnp | grep 5044
+```
+
+---
+
+# 17. Explore Logs in Kibana Discover
+
+Open Kibana from browser:
+
+```
+http://192.168.1.10:5601
+```
+
+## Create Index Patterns
+
+### For direct Elasticsearch ingestion
+
+```
+filebeat-*
+```
+
+### For Logstash ingestion
+
+```
+logstash-beats-*
+```
+
+## View Logs
+
+Go to:
+**Kibana → Discover**
+
+You should now see logs from all Filebeat nodes.
+
