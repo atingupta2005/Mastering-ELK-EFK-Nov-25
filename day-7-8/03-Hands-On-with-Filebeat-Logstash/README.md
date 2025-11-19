@@ -6,10 +6,10 @@ Below is an example setup (replace IPs as needed):
 
 | Component                   | Example IP                  | Description                  |
 | --------------------------- | --------------------------- | ---------------------------- |
-| Elasticsearch Server        | 192.168.1.10                | Receives and stores logs     |
-| Logstash Server             | 192.168.1.20                | Processes logs from Filebeat |
-| Kibana UI                   | 192.168.1.10                | Visualization console        |
-| Filebeat Nodes (18 systems) | 192.168.1.30 – 192.168.1.47 | Servers generating logs      |
+| Elasticsearch Server        | 10.0.18.1                | Receives and stores logs     |
+| Logstash Server             | 10.0.18.4                | Processes logs from Filebeat |
+| Kibana UI                   | 10.0.18.1                | Visualization console        |
+| Filebeat Nodes (18 systems) | 10.0.18.7 – 10.0.18.52 | Servers generating logs      |
 
 Replace these IPs with your actual network IPs.
 
@@ -106,9 +106,9 @@ Update the output section:
 
 ```yaml
 output.elasticsearch:
-  hosts: ["http://192.168.1.10:9200"]
-  username: "elastic"
-  password: "YourStrongPassword"
+  hosts: ["http://10.0.18.1:9200"]
+  username: "<Your-User-Name>"
+  password: "<Your-Password>"
 ```
 
 Disable Logstash output:
@@ -127,7 +127,7 @@ sudo systemctl restart filebeat
 ### Verify Elasticsearch Received Logs
 
 ```bash
-curl -X GET "http://192.168.1.10:9200/_cat/indices?v" | grep filebeat
+curl -u your-user-name:-your-password -X GET "http://10.0.18.1:9200/_cat/indices?v" | grep filebeat
 ```
 
 ---
@@ -146,7 +146,7 @@ Update output:
 
 ```yaml
 output.logstash:
-  hosts: ["192.168.1.20:5044"]
+  hosts: ["10.0.18.22:5044"]
 ```
 
 Disable Elasticsearch output:
@@ -164,7 +164,7 @@ sudo systemctl restart filebeat
 
 ---
 
-# Step 2: Install Logstash 9.2.1 on Logstash Server (192.168.1.20)
+# Step 2: Install Logstash 9.2.1 on Logstash Server (10.0.18.22)
 
 Run these commands **on the Logstash server only**.
 
@@ -216,7 +216,7 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://192.168.1.10:9200"]
+    hosts => ["http://10.0.18.1:9200"]
     index => "logstash-beats-%{+YYYY.MM.dd}"
   }
   stdout { codec => rubydebug }
@@ -242,7 +242,7 @@ sudo ss -tulnp | grep 5044
 Open Kibana from browser:
 
 ```
-http://192.168.1.10:5601
+http://10.0.18.1:5601
 ```
 
 ## Create Index Patterns

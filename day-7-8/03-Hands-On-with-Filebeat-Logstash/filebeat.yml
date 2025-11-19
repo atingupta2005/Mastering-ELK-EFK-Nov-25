@@ -1,0 +1,17 @@
+filebeat.inputs:
+  - type: filestream
+    id: myapp-logs
+    enabled: true
+    prospector.scanner.fingerprint.length: 64
+    prospector.scanner.fingerprint.offset: 0
+    paths:
+      - /var/log/myapp/*.log
+      - /var/log/myapp/*.json
+
+output.elasticsearch:
+  hosts: ["http://10.0.18.1:9200"]
+  username: "atin.gupta"
+  password: "2313634"
+
+output.logstash:
+  enabled: false
