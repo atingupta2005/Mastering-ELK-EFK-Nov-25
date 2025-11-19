@@ -217,6 +217,8 @@ filter {
 output {
   elasticsearch {
     hosts => ["http://10.0.18.1:9200"]
+    user => "atin.gupta"
+    password => "2313634"
     index => "logstash-beats-%{+YYYY.MM.dd}"
   }
   stdout { codec => rubydebug }
