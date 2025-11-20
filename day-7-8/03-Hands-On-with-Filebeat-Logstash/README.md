@@ -205,6 +205,7 @@ Paste:
 input {
   beats {
     port => 5044
+    host => "0.0.0.0"
   }
 }
 
