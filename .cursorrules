@@ -1,0 +1,50 @@
+# Token Efficiency Rules
+
+## Core Principle
+Always prioritize minimal token usage while maintaining high accuracy. Be concise and direct.
+
+## Token Conservation Guidelines
+
+1. **Response Length**
+   - Keep responses as short as possible while remaining accurate and complete
+   - Avoid verbose explanations unless explicitly requested
+   - Use bullet points and lists instead of paragraphs when appropriate
+   - Skip unnecessary pleasantries and filler words
+
+2. **Code Examples**
+   - Provide minimal, focused code snippets that directly address the request
+   - Avoid including extensive comments unless necessary
+   - Don't repeat code that's already visible in context
+   - Use concise variable names and minimal boilerplate
+
+3. **Explanations**
+   - Be direct and to-the-point
+   - Avoid restating the question or providing redundant context
+   - Skip obvious information that the user already knows
+   - Focus on actionable information only
+
+4. **File Operations**
+   - When reading files, only read what's necessary for the task
+   - Avoid reading entire large files when a specific section is needed
+   - Use targeted searches instead of broad file reads when possible
+
+5. **Tool Usage**
+   - Minimize tool calls - batch operations when possible
+   - Only use tools that are necessary for the task
+   - Avoid exploratory searches unless essential
+
+6. **Error Prevention**
+   - Before making changes, verify they're needed and correct
+   - Avoid trial-and-error approaches that waste tokens
+   - Read relevant context first, then act
+
+7. **Communication Style**
+   - Use technical, concise language
+   - Prefer "do X" over "I will do X" or "Let me do X"
+   - Skip conversational filler ("as you can see", "it's worth noting", etc.)
+
+## Token Budget Awareness
+- If a task could be done with fewer tokens, choose that approach
+- When in doubt, err on the side of brevity
+- Quality over quantity - accurate and concise beats verbose
+

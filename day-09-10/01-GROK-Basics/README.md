@@ -1,5 +1,9 @@
 # **Grok Concepts & Basics**
 
+> **Note for docker-elk users:**
+> - Logstash configs go in: `logstash/pipeline/` directory (from docker-elk directory)
+> - Custom patterns go in: `logstash/config/patterns/` directory
+
 # **1. What is Grok?**
 
 Grok is Logstash’s built‑in pattern-matching system used to **extract structured fields** from unstructured log lines.
@@ -186,7 +190,7 @@ message: %{DATA:msg}
 
 # **6. Grok in Logstash (Real Configuration Examples)**
 
-In Logstash pipeline (`/etc/logstash/conf.d/*.conf`):
+In Logstash pipeline (`logstash/pipeline/*.conf` from docker-elk directory):
 
 ```ruby
 filter {
@@ -242,10 +246,10 @@ Both work.
 
 # **8. Creating Custom Grok Patterns**
 
-Pattern file location:
+Pattern file location (from docker-elk directory):
 
 ```
-/etc/logstash/patterns/my_patterns
+logstash/config/patterns/my_patterns
 ```
 
 Example:

@@ -1,5 +1,11 @@
 # **Logstash Parsing & Pipelines**
 
+> **Note for docker-elk users:**
+> - All commands should be run from the `docker-elk` directory
+> - Default credentials: `logstash_internal:changeme` (update if changed in `.env`)
+> - Logstash configs go in: `logstash/pipeline/` directory
+> - Use `docker compose` commands for Logstash
+
 # **1. Logstash Architecture**
 
 A Logstash pipeline has 3 sections:
@@ -44,7 +50,7 @@ Where logs are sent:
 
 # **2. Understanding the Logstash Pipeline Structure**
 
-A basic pipeline file (`/etc/logstash/conf.d/my.conf`) looks like:
+A basic pipeline file (`logstash/pipeline/my.conf` from docker-elk directory) looks like:
 
 ```ruby
 input {
@@ -59,9 +65,9 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://10.0.18.1:9200"]
-    username => "atin.gupta"
-    password => "2313634"
+    hosts => ["http://elasticsearch:9200"]
+    user => "logstash_internal"
+    password => "changeme"
   }
 }
 ```
@@ -384,8 +390,8 @@ if "myapp" in [tags] {
 
 ```ruby
 elasticsearch {
-  hosts => ["http://10.0.18.1:9200"]
-  username => "atin.gupta"
+  hosts => ["http://elasticsearch:9200"]
+  user => "logstash_internal"
   password => "2313634"
   index => "logstash-%{+YYYY.MM.dd}"
 }

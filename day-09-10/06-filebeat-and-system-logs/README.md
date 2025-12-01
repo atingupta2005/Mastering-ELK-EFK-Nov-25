@@ -1,5 +1,11 @@
 # Collect OS Generated System Logs
 
+> **Note for docker-elk users:**
+> - Filebeat runs on host (use `systemctl` for it)
+> - Default credentials: `logstash_internal:changeme` (update if changed in `.env`)
+> - Logstash configs go in: `logstash/pipeline/` directory (from docker-elk directory)
+> - Use `docker compose` commands for Logstash
+
 # ✅ **Enable the Filebeat System Module**
 
 This module is dedicated to OS logs and supports:
@@ -63,7 +69,7 @@ In your `filebeat.yml`, configure:
 ```yaml
 output.logstash:
   enabled: true
-  hosts: ["10.0.18.1:5044"]
+  hosts: ["localhost:5044"]
 ```
 
 And disable direct Elasticsearch output:
@@ -86,10 +92,10 @@ sudo systemctl status filebeat
 
 # ✅ **Adjust Logstash Pipeline (Optional)**
 
-Sample pipeline:
+Sample pipeline (from docker-elk directory):
 
 ```
-sudo nano /etc/logstash/conf.d/01-system.conf
+nano logstash/pipeline/01-system.conf
 ```
 
 ```ruby
@@ -107,19 +113,19 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://10.0.18.1:9200"]
-    user => "atin.gupta"
-    password => "2313634"
+    hosts => ["http://elasticsearch:9200"]
+    user => "logstash_internal"
+    password => "changeme"
     index => "system-logs-%{+YYYY.MM.dd}"
   }
   stdout { codec => rubydebug }
 }
 ```
 
-Restart Logstash:
+Restart Logstash (from docker-elk directory):
 
 ```
-sudo systemctl restart logstash
+docker compose restart logstash
 ```
 
 ---
@@ -129,7 +135,7 @@ sudo systemctl restart logstash
 Check indices:
 
 ```
-curl -u atin.gupta:2313634 "http://10.0.18.1:9200/_cat/indices?v" | grep system
+curl -u elastic:changeme "http://localhost:9200/_cat/indices?v" | grep system
 ```
 
 Expected outputs:

@@ -1,5 +1,11 @@
 # Logstash + Grok Parsing for Apache Logs
 
+> **Note for docker-elk users:**
+> - All commands should be run from the `docker-elk` directory
+> - Default credentials: `logstash_internal:changeme` (update if changed in `.env`)
+> - Logstash configs go in: `logstash/pipeline/` directory
+> - Use `docker compose` commands for Logstash
+
 ---
 
 # 1. Understanding Apache Logs
@@ -108,10 +114,10 @@ EOF
 
 # 4. Logstash Pipeline to Parse Apache Logs
 
-Create Logstash pipeline file:
+Create Logstash pipeline file (from docker-elk directory):
 
 ```
-sudo nano /etc/logstash/conf.d/apache-grok.conf
+nano logstash/pipeline/apache-grok.conf
 ```
 
 Paste:
@@ -149,10 +155,10 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://10.0.18.1:9200"]
+    hosts => ["http://elasticsearch:9200"]
     index => "apache-logs-%{+YYYY.MM.dd}"
-    user => "your_username"
-    password => "your_password"
+    user => "logstash_internal"
+    password => "changeme"
   }
 
   stdout { codec => rubydebug }
@@ -161,16 +167,16 @@ output {
 
 Save & exit.
 
-Restart Logstash:
+Restart Logstash (from docker-elk directory):
 
 ```
-sudo systemctl restart logstash
+docker compose restart logstash
 ```
 
 Check logs:
 
 ```
-sudo journalctl -u logstash -f
+docker compose logs -f logstash
 ```
 
 ---
@@ -215,10 +221,10 @@ Minimal Grok Pattern:
 %{IP:client_ip} .* "%{WORD:method} %{DATA:url} HTTP/%{NUMBER:http_version}" %{NUMBER:status} %{NUMBER:bytes}
 ```
 
-Create Logstash pipeline:
+Create Logstash pipeline (from docker-elk directory):
 
 ```
-sudo nano /etc/logstash/conf.d/apache-minimal.conf
+nano logstash/pipeline/apache-minimal.conf
 ```
 
 Paste:
@@ -249,10 +255,10 @@ output {
 }
 ```
 
-Restart Logstash:
+Restart Logstash (from docker-elk directory):
 
 ```
-sudo systemctl restart logstash
+docker compose restart logstash
 ```
 
 Expected output:

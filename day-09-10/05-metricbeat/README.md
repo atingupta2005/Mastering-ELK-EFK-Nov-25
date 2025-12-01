@@ -1,5 +1,11 @@
 # Metric Collection Hands‑On Guide (Focused on Metricbeat + Elasticsearch + Logstash)
 
+> **Note for docker-elk users:**
+> - Metricbeat runs on host (use `systemctl` for it)
+> - Default credentials: `elastic:changeme` and `logstash_internal:changeme` (update if changed in `.env`)
+> - Logstash configs go in: `logstash/pipeline/` directory (from docker-elk directory)
+> - Use `docker compose` commands for Logstash/Elasticsearch/Kibana
+
 ## Installing Metricbeat on CentOS Stream 9
 
 ### Step 1: Import Elastic GPG Key
@@ -107,9 +113,9 @@ Ensure this section is correct:
 
 ```
 output.elasticsearch:
-  hosts: ["http://10.0.18.1:9200"]
-  username: "your_username"
-  password: "your_password"
+  hosts: ["http://localhost:9200"]
+  username: "elastic"
+  password: "changeme"
 ```
 
 Disable Logstash output:
@@ -140,7 +146,7 @@ If you want Logstash to process metrics, modify:
 ```
 output.logstash:
   enabled: true
-  hosts: ["10.0.18.1:5044"]
+  hosts: ["localhost:5044"]
 ```
 
 Disable ES output:
@@ -150,10 +156,10 @@ output.elasticsearch:
   enabled: false
 ```
 
-### Create Logstash pipeline
+### Create Logstash pipeline (from docker-elk directory)
 
 ```
-sudo nano /etc/logstash/conf.d/metricbeat.conf
+nano logstash/pipeline/metricbeat.conf
 ```
 
 ```
@@ -171,18 +177,18 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://10.0.18.1:9200"]
+    hosts => ["http://elasticsearch:9200"]
     index => "metricbeat-system-%{+YYYY.MM.dd}"
-    user => "your_username"
-    password => "your_password"
+    user => "logstash_internal"
+    password => "changeme"
   }
 }
 ```
 
-Restart Logstash:
+Restart Logstash (from docker-elk directory):
 
 ```
-sudo systemctl restart logstash
+docker compose restart logstash
 ```
 
 ---
@@ -192,7 +198,7 @@ sudo systemctl restart logstash
 Check indices:
 
 ```
-curl -u user:pass -X GET "http://10.0.18.1:9200/_cat/indices?v" | grep metricbeat
+curl -u elastic:changeme -X GET "http://localhost:9200/_cat/indices?v" | grep metricbeat
 ```
 
 Example:
@@ -204,7 +210,7 @@ Example:
 Retrieve metrics:
 
 ```
-curl -u user:pass -X GET "http://10.0.18.1:9200/metricbeat-*/_search?pretty&size=1"
+curl -u elastic:changeme -X GET "http://localhost:9200/metricbeat-*/_search?pretty&size=1"
 ```
 
 ---
@@ -373,7 +379,7 @@ sudo metricbeat test output
 Check ES connectivity:
 
 ```
-curl -u user:pass http://10.0.18.1:9200
+curl -u elastic:changeme http://localhost:9200
 ```
 
 ### 2. Metricbeat not reading modules

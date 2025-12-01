@@ -1,4 +1,12 @@
 # **Filebeat → Logstash → Elasticsearch**
+
+> **Note for docker-elk users:**
+> - All commands should be run from the `docker-elk` directory
+> - Default credentials: `elastic:changeme` and `logstash_internal:changeme` (update if changed in `.env`)
+> - Logstash configs go in: `logstash/pipeline/` directory
+> - Filebeat runs on host (use `systemctl` for it)
+> - Use `docker compose` commands for Logstash/Elasticsearch/Kibana
+
 # **1. Architecture Overview**
 
 Below is the complete flow:
@@ -57,7 +65,7 @@ filebeat.inputs:
       - /var/log/myapp/*.json
 
 output.logstash:
-  hosts: ["10.0.18.1:5044"]
+  hosts: ["localhost:5044"]
 ```
 
 Save → exit → test:
@@ -80,10 +88,10 @@ sudo systemctl status filebeat
 
 Logstash receives Filebeat logs → parses → sends to Elasticsearch.
 
-Edit Logstash pipeline:
+Edit Logstash pipeline (from docker-elk directory):
 
 ```
-sudo nano /etc/logstash/conf.d/01-beats.conf
+nano logstash/pipeline/01-beats.conf
 ```
 
 ### **Pipeline Definition**
@@ -110,26 +118,26 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://10.0.18.1:9200"]
-    user => "atin.gupta"
-    password => "2313634"
+    hosts => ["http://elasticsearch:9200"]
+    user => "logstash_internal"
+    password => "changeme"
     index => "logstash-beats-%{+YYYY.MM.dd}"
   }
   stdout { codec => rubydebug }
 }
 ```
 
-Restart Logstash:
+Restart Logstash (from docker-elk directory):
 
 ```
-sudo systemctl restart logstash
-sudo systemctl status logstash
+docker compose restart logstash
+docker compose ps logstash
 ```
 
 Watch live logs:
 
 ```
-sudo journalctl -u logstash -f
+docker compose logs -f logstash
 ```
 
 ---
@@ -205,7 +213,7 @@ Look for:
 ## **5.3 Check Elasticsearch output**
 
 ```
-curl -u atin.gupta:2313634 "http://10.0.18.1:9200/_cat/indices?v" | grep logstash
+curl -u elastic:changeme "http://localhost:9200/_cat/indices?v" | grep logstash
 ```
 
 You should see:
@@ -249,10 +257,10 @@ Example Apache log:
 192.168.1.10 - - [12/Nov/2025:21:15:32 +0000] "GET /index.html HTTP/1.1" 200 532
 ```
 
-Create pipeline:
+Create pipeline (from docker-elk directory):
 
 ```
-sudo nano /etc/logstash/conf.d/apache.conf
+nano logstash/pipeline/apache.conf
 ```
 
 ```
@@ -273,9 +281,9 @@ filter {
 
 output {
   elasticsearch {
-    hosts => ["http://10.0.18.1:9200"]
-    user => "atin.gupta"
-    password => "2313634"
+    hosts => ["http://elasticsearch:9200"]
+    user => "logstash_internal"
+    password => "changeme"
     index => "apache-logs-%{+YYYY.MM.dd}"
   }
 
@@ -283,10 +291,10 @@ output {
 }
 ```
 
-Restart:
+Restart (from docker-elk directory):
 
 ```
-sudo systemctl restart logstash
+docker compose restart logstash
 ```
 
 ---
@@ -349,20 +357,20 @@ sudo filebeat test output
 ### **Logstash Errors**
 
 ```
-sudo journalctl -u logstash -f
-sudo /usr/share/logstash/bin/logstash --path.settings /etc/logstash -t
+docker compose logs -f logstash
+docker compose exec logstash /usr/share/logstash/bin/logstash --path.settings /usr/share/logstash/config -t
 ```
 
 ### **Elasticsearch Problems**
 
 ```
-curl -u user:pass http://10.0.18.1:9200/_cluster/health?pretty
+curl -u elastic:changeme http://localhost:9200/_cluster/health?pretty
 ```
 
 ### **Filebeat → Logstash Connectivity**
 
 ```
-telnet 10.0.18.1 5044
+telnet localhost 5044
 ```
 
 Should open the connection (blank screen).
