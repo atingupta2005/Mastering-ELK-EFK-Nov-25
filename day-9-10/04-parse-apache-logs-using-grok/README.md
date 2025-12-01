@@ -64,21 +64,20 @@ Run this script (as a normal user or root):
 
 ```
 while true; do
-  IP="192.168.$((RANDOM%255)).$((RANDOM%255))"
-  USER=$(shuf -e admin guest john mary api-user -n 1)
-  METHOD=$(shuf -e GET POST PUT DELETE PATCH -n 1)
-  PATH=$(shuf -e / /home /login /api/user /api/order /dashboard /product?id=$((RANDOM%999)) -n 1)
-  STATUS=$(shuf -e 200 201 204 301 400 401 403 404 500 503 -n 1)
+  IP="10.0.18.4"
+  USER=$(/usr/bin/shuf -e admin guest john mary api-user -n 1)
+  METHOD=$(/usr/bin/shuf -e GET POST PUT DELETE PATCH -n 1)
+  PATH=$(/usr/bin/shuf -e / /home /login /api/user /api/order /dashboard /product?id=$((RANDOM%999)) -n 1)
+  STATUS=$(/usr/bin/shuf -e 200 201 204 301 400 401 403 404 500 503 -n 1)
   BYTES=$((RANDOM%5000+200))
-  AGENT=$(shuf -e "Mozilla/5.0" "curl/7.68.0" "python-requests/2.28" "Java-http-client" -n 1)
+  AGENT=$(/usr/bin/shuf -e "Mozilla/5.0" "curl/7.68.0" "python-requests/2.28" "Java-http-client" -n 1)
   REF="-"
-
-  TS=$(date '+%d/%b/%Y:%H:%M:%S %z')
-
-  echo "$IP - $USER [$TS] \"$METHOD $PATH HTTP/1.1\" $STATUS $BYTES \"$REF\" \"$AGENT\"" \
-    | sudo tee -a /var/log/apachecustom/access.log > /dev/null
-
-  sleep 1
+ 
+  TS=$(/bin/date '+%d/%b/%Y:%H:%M:%S %z')
+ 
+  echo "$IP - $USER [$TS] \"$METHOD $PATH HTTP/1.1\" $STATUS $BYTES \"$REF\" \"$AGENT\"" \ | /bin/sudo tee -a /var/log/apachecustom/access.log > /dev/null
+ 
+  /bin/sleep 1
 done
 ```
 
