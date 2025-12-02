@@ -575,99 +575,9 @@ elasticsearch.password: "${KIBANA_SYSTEM_PASSWORD}"
 
 ---
 
-## 7. HTTPS/TLS Configuration (Optional)
+## 7. Additional Security Features
 
-HTTPS encrypts communication between clients and Elasticsearch/Kibana, protecting credentials and data in transit.
-
-### 7.1 Enable HTTPS in Elasticsearch
-
-**Step 1: Generate certificates (from within container)**
-
-```bash
-docker compose exec elasticsearch bash
-bin/elasticsearch-certutil ca --out /usr/share/elasticsearch/config/ca.p12 --pass ""
-bin/elasticsearch-certutil cert --ca /usr/share/elasticsearch/config/ca.p12 --ca-pass "" --out /usr/share/elasticsearch/config/elastic-cert.p12 --pass ""
-exit
-```
-
-**Command explanation:**
-* `elasticsearch-certutil`: Elasticsearch certificate generation utility
-* `ca`: Create Certificate Authority
-* `cert`: Create node certificate
-* `--out`: Output file path
-* `--pass "":` No password protection (for simplicity)
-* **Purpose:** Generate self-signed certificates for HTTPS
-
-**Step 2: Update Elasticsearch config**
-
-Edit `elasticsearch/config/elasticsearch.yml`:
-
-```yaml
-xpack.security.http.ssl.enabled: true
-xpack.security.http.ssl.keystore.path: certs/elastic-cert.p12
-xpack.security.http.ssl.keystore.type: PKCS12
-xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.keystore.path: certs/elastic-cert.p12
-xpack.security.transport.ssl.keystore.type: PKCS12
-```
-
-**Step 3: Restart Elasticsearch**
-
-```bash
-docker compose restart elasticsearch
-```
-
-**Step 4: Test HTTPS connection**
-
-```bash
-curl -u elastic:changeme -k https://localhost:9200
-```
-
-**Command explanation:**
-* `-k`: Ignore certificate verification (for self-signed certs)
-* `https://`: Use HTTPS protocol
-* **Purpose:** Verify HTTPS is working
-
----
-
-### 7.2 Enable HTTPS in Kibana
-
-**Step 1: Copy certificate to Kibana**
-
-```bash
-docker compose cp elasticsearch:/usr/share/elasticsearch/config/ca.p12 ./kibana/config/
-```
-
-**Command explanation:**
-* `docker compose cp`: Copy files between host and container
-* **Purpose:** Share certificate with Kibana
-
-**Step 2: Update Kibana config**
-
-Edit `kibana/config/kibana.yml`:
-
-```yaml
-server.ssl.enabled: true
-server.ssl.keystore.path: /usr/share/kibana/config/ca.p12
-elasticsearch.hosts: ["https://elasticsearch:9200"]
-elasticsearch.ssl.certificateAuthorities: ["/usr/share/kibana/config/ca.p12"]
-```
-
-**Step 3: Restart Kibana**
-
-```bash
-docker compose restart kibana
-```
-
-**Step 4: Access Kibana via HTTPS**
-
-Open browser: `https://localhost:5601` (accept self-signed certificate warning)
-
----
-
-## 8. Additional Security Features
-
-### 8.1 API Keys
+### 7.1 API Keys
 
 **Purpose:** Alternative to username/password for programmatic access.
 
@@ -697,7 +607,7 @@ curl -H "Authorization: ApiKey <base64_encoded_key>" http://localhost:9200/_clus
 
 ---
 
-### 8.2 Role-Based Access Control (RBAC)
+### 7.2 Role-Based Access Control (RBAC)
 
 **Create custom role:**
 
@@ -742,7 +652,7 @@ curl -u elastic:changeme -X POST "http://localhost:9200/_security/user/app_user"
 
 ---
 
-### 8.3 Field-Level Security
+### 7.3 Field-Level Security
 
 **Restrict access to specific fields:**
 

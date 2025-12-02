@@ -1,83 +1,10 @@
 # Day 12 – Advanced Security (Elasticsearch 9.x | CentOS)
 
-## 1. TLS / HTTPS Configuration
-
-TLS (Transport Layer Security) encrypts network communication, protecting credentials and data in transit.
-
-### 1.1 What TLS Does
-
-* Encrypts data on the network
-* Protects usernames, passwords, and API keys
-* Prevents others from reading network traffic
-* Provides authentication between client and server
-
-### 1.2 When to Use HTTPS
-
-**Use HTTPS when:**
-* Data contains sensitive information
-* Communication happens over untrusted networks
-* Compliance requirements mandate encryption
-* Production environments
-
-**HTTP is acceptable when:**
-* Internal trusted networks only
-* Development/testing environments
-* Performance is critical and encryption overhead is a concern
-
----
-
-### 1.3 Enable HTTPS in Elasticsearch
-
-**Step 1: Generate certificates (from within container)**
-
-```bash
-docker compose exec elasticsearch bash
-bin/elasticsearch-certutil ca --out /usr/share/elasticsearch/config/ca.p12 --pass ""
-bin/elasticsearch-certutil cert --ca /usr/share/elasticsearch/config/ca.p12 --ca-pass "" --out /usr/share/elasticsearch/config/elastic-cert.p12 --pass ""
-exit
-```
-
-**Command explanation:**
-* `docker compose exec elasticsearch bash`: Access Elasticsearch container shell
-* `elasticsearch-certutil`: Elasticsearch certificate generation utility
-* `ca`: Create Certificate Authority
-* `cert`: Create node certificate
-* `--out`: Output file path
-* `--pass ""`: No password protection (for simplicity)
-* **Purpose:** Generate self-signed certificates for HTTPS
-
-**Step 2: Update Elasticsearch config**
-
-Edit `elasticsearch/config/elasticsearch.yml`:
-
-```yaml
-xpack.security.http.ssl.enabled: true
-xpack.security.http.ssl.keystore.path: certs/elastic-cert.p12
-xpack.security.http.ssl.keystore.type: PKCS12
-xpack.security.transport.ssl.enabled: true
-xpack.security.transport.ssl.keystore.path: certs/elastic-cert.p12
-xpack.security.transport.ssl.keystore.type: PKCS12
-```
-
-**Step 3: Restart and test**
-
-```bash
-docker compose restart elasticsearch
-curl -u elastic:changeme -k https://localhost:9200
-```
-
-**Command explanation:**
-* `-k`: Ignore certificate verification (for self-signed certs)
-* `https://`: Use HTTPS protocol
-* **Purpose:** Verify HTTPS is working
-
----
-
-## 2. API Keys for Secure Ingestion
+## 1. API Keys for Secure Ingestion
 
 API keys provide an alternative to username/password authentication for programmatic access.
 
-### 2.1 Why API Keys Are Used
+### 1.1 Why API Keys Are Used
 
 **Advantages:**
 * **Security:** Avoid storing usernames and passwords in scripts or configuration files
@@ -99,7 +26,7 @@ API keys provide an alternative to username/password authentication for programm
 
 ---
 
-### 2.2 Create a Simple API Key
+### 1.2 Create a Simple API Key
 
 **Method 1: Using curl (from host)**
 
@@ -134,7 +61,7 @@ curl -u elastic:changeme -X POST "http://localhost:9200/_security/api_key" \
 
 ---
 
-### 2.3 Encode the API Key
+### 1.3 Encode the API Key
 
 API keys must be base64-encoded before use.
 
@@ -145,7 +72,7 @@ echo -n 'VuaCfGcBCdbkQm-e5aOx:ui2lp2axTNmsyakw9tvNnw' | base64
 ```
 
 
-### 2.4 Create API Key with Expiration
+### 1.4 Create API Key with Expiration
 
 API keys can be set to expire automatically:
 
@@ -160,7 +87,7 @@ curl -u elastic:changeme -X POST "http://localhost:9200/_security/api_key" \
 
 ---
 
-### 2.5 Use API Key for Authentication
+### 1.5 Use API Key for Authentication
 
 **Send document using API key:**
 
@@ -173,7 +100,7 @@ curl -X POST "http://localhost:9200/api-demo/_doc" \
 
 ---
 
-### 2.6 Verify API Key Works
+### 1.6 Verify API Key Works
 
 **Test API key authentication:**
 
@@ -184,7 +111,7 @@ curl -H "Authorization: ApiKey VnVhQ2ZHY0JDZGJrUW0tZTVhT3g6dWkybHAyYXhUTm1zeWFrd
 
 ---
 
-### 2.7 List and Manage API Keys
+### 1.7 List and Manage API Keys
 
 **List all API keys:**
 
@@ -198,7 +125,7 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_security/api_key?pretty"
 curl -u elastic:changeme -X DELETE "http://localhost:9200/_security/api_key?id=VuaCfGcBCdbkQm-e5aOx"
 ```
 
-### 2.8 Use API Key in Filebeat Configuration
+### 1.8 Use API Key in Filebeat Configuration
 
 API keys are commonly used in Beats configuration:
 
@@ -211,18 +138,18 @@ output.elasticsearch:
 ```
 ---
 
-## 3. Document-Level Security (DLS)
+## 2. Document-Level Security (DLS)
 
 Document-Level Security (DLS) restricts access to specific documents based on user attributes or document fields.
 
-### 3.1 What DLS Does
+### 2.1 What DLS Does
 
 DLS allows you to:
 * Filter documents based on user identity
 * Hide documents from users who shouldn't see them
 * Control access at the document level (not just index level)
 
-### 3.2 Simple DLS Example
+### 2.2 Simple DLS Example
 
 **Create role with DLS:**
 
@@ -267,18 +194,18 @@ curl -u elastic:changeme -X POST "http://localhost:9200/_security/user/sales_use
 
 ---
 
-## 4. Field-Level Security (FLS)
+## 3. Field-Level Security (FLS)
 
 Field-Level Security (FLS) restricts access to specific fields within documents.
 
-### 4.1 What FLS Does
+### 3.1 What FLS Does
 
 FLS allows you to:
 * Hide sensitive fields from users
 * Show only specific fields
 * Control field visibility based on user roles
 
-### 4.2 Simple FLS Example
+### 3.2 Simple FLS Example
 
 **Create role with FLS:**
 
@@ -326,9 +253,9 @@ curl -u elastic:changeme -X PUT "http://localhost:9200/_security/role/restricted
 
 ---
 
-## 5. Security Settings in Configuration Files
+## 4. Security Settings in Configuration Files
 
-### 5.1 Elasticsearch Security Settings
+### 4.1 Elasticsearch Security Settings
 
 **File location:** `elasticsearch/config/elasticsearch.yml`
 
@@ -381,7 +308,7 @@ xpack.security.audit.logfile.events.include: ["access_denied", "authentication_f
 
 ---
 
-### 5.2 View Security Settings
+### 4.2 View Security Settings
 
 **Check current security settings:**
 
@@ -398,9 +325,9 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_cluster/settings?include
 
 ---
 
-## 6. Security Best Practices
+## 5. Security Best Practices
 
-### 6.1 API Key Best Practices
+### 5.1 API Key Best Practices
 
 * **Use restricted API keys:** Grant only necessary permissions
 * **Set expiration:** Use expiration for temporary access
@@ -408,7 +335,7 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_cluster/settings?include
 * **Store securely:** Keep API keys in secure storage (not in code repositories)
 * **Monitor usage:** Regularly review API key usage and revoke unused ones
 
-### 6.2 General Security Best Practices
+### 5.2 General Security Best Practices
 
 * **Enable HTTPS:** Use TLS/SSL in production
 * **Strong passwords:** Use complex passwords for all users
@@ -418,9 +345,9 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_cluster/settings?include
 
 ---
 
-## 7. Troubleshooting
+## 6. Troubleshooting
 
-### 7.1 API Key Issues
+### 6.1 API Key Issues
 
 **Problem: API key authentication fails**
 
@@ -438,7 +365,7 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_security/api_key?id=<KEY
 * Incorrect encoding → Verify base64 encoding
 * Wrong format → Ensure format is `ApiKey <base64_encoded_id:key>`
 
-### 7.2 DLS/FLS Issues
+### 6.2 DLS/FLS Issues
 
 **Problem: Users can't see expected documents/fields**
 

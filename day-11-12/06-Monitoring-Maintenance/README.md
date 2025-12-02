@@ -672,82 +672,9 @@ curl -u elastic:changeme -X DELETE "http://localhost:9200/old-logs-*"
 
 ---
 
-## 10. Index Lifecycle Management (ILM) Basics
+## 10. Log Retention Best Practices
 
-### 10.1 Create ILM Policy
-
-**Create simple ILM policy:**
-
-```bash
-curl -u elastic:changeme -X PUT "http://localhost:9200/_ilm/policy/logs-policy" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "policy": {
-      "phases": {
-        "hot": {
-          "actions": {
-            "rollover": {
-              "max_size": "10GB",
-              "max_age": "7d"
-            }
-          }
-        },
-        "delete": {
-          "min_age": "30d",
-          "actions": {
-            "delete": {}
-          }
-        }
-      }
-    }
-  }'
-```
-
----
-
-### 10.2 Apply ILM Policy to Index Template
-
-**Create index template with ILM:**
-
-```bash
-curl -u elastic:changeme -X PUT "http://localhost:9200/_index_template/logs-template" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "index_patterns": ["logs-*"],
-    "template": {
-      "settings": {
-        "index.lifecycle.name": "logs-policy",
-        "index.lifecycle.rollover_alias": "logs"
-      }
-    }
-  }'
-```
-
-**Command explanation:**
-* `index_patterns`: Index pattern to match
-* `index.lifecycle.name`: ILM policy name
-* `index.lifecycle.rollover_alias`: Alias for rollover
-* **Purpose:** Apply ILM policy to new indices matching pattern
-
----
-
-### 10.3 Check ILM Status
-
-**Get ILM status for indices:**
-
-```bash
-curl -u elastic:changeme -X GET "http://localhost:9200/_ilm/explain?pretty"
-```
-
-**Command explanation:**
-* `_ilm/explain`: ILM explain API
-* **Purpose:** See ILM status and current phase for all indices
-
----
-
-## 11. Log Retention Best Practices
-
-### 11.1 Why Log Retention Is Important
+### 10.1 Why Log Retention Is Important
 
 * **Prevents disk from getting full:** Old logs consume disk space
 * **Improves search performance:** Fewer indices mean faster searches
@@ -756,7 +683,7 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_ilm/explain?pretty"
 
 ---
 
-### 11.2 Simple Retention Practices
+### 10.2 Simple Retention Practices
 
 **Manual deletion (for small setups):**
 
@@ -778,9 +705,9 @@ curl -u elastic:changeme -X DELETE "http://localhost:9200/old-logs-2025.01.01"
 
 ---
 
-## 12. Troubleshooting Common Issues
+## 11. Troubleshooting Common Issues
 
-### 12.1 Cluster Health is Red
+### 11.1 Cluster Health is Red
 
 **Problem:** Cluster health shows red status
 
@@ -806,7 +733,7 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_cat/shards?v&h=index,sha
 
 ---
 
-### 12.2 High Disk Usage
+### 11.2 High Disk Usage
 
 **Problem:** Disk space is running low
 
@@ -828,7 +755,7 @@ curl -u elastic:changeme -X GET "http://localhost:9200/_cat/allocation?v"
 
 ---
 
-### 12.3 Logstash Not Processing Events
+### 11.3 Logstash Not Processing Events
 
 **Problem:** Logstash is running but not processing events
 
@@ -857,7 +784,7 @@ curl -X GET "http://localhost:9600/_node/pipelines?pretty"
 
 ---
 
-### 12.4 Beats Not Sending Data
+### 11.4 Beats Not Sending Data
 
 **Problem:** Filebeat/Metricbeat is running but not sending data
 
@@ -888,7 +815,7 @@ sudo cat /var/lib/filebeat/registry/filebeat/data.json
 
 ---
 
-## 13. Daily Monitoring Checklist
+## 12. Daily Monitoring Checklist
 
 Use this checklist for daily monitoring:
 
@@ -937,7 +864,7 @@ Use this checklist for daily monitoring:
 
 ---
 
-## 14. Quick Reference Commands
+## 13. Quick Reference Commands
 
 **Cluster Health:**
 ```bash
