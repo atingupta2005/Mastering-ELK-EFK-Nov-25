@@ -12,11 +12,18 @@ Create a `.env` file in your `docker-elk` directory (or the directory where `doc
 
 ### 1. Navigate to your docker-elk directory
 
+**IMPORTANT:** The `docker-compose.cluster.yml` file must be used from the **docker-elk** directory (the one you cloned from https://github.com/deviantony/docker-elk), not from the Mastering-ELK-EFK-Nov-25 directory.
+
 ```bash
+# Navigate to your docker-elk directory
 cd ~/docker-elk
-# OR
-cd ~/Mastering-ELK-EFK-Nov-25/docker-elk
+
+# If you don't have docker-elk cloned yet, clone it first:
+# git clone https://github.com/deviantony/docker-elk.git
+# cd docker-elk
 ```
+
+**Note:** The `docker-compose.cluster.yml` file needs to be copied to the docker-elk directory, or you can use it from there.
 
 ### 2. Create .env file
 

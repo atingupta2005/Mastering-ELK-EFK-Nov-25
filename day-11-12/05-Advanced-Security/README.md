@@ -1,144 +1,494 @@
 # Day 12 – Advanced Security (Elasticsearch 9.x | CentOS)
 
-> **Note for docker-elk users:**
-> - All commands should be run from the `docker-elk` directory
-> - Default credentials: `elastic:changeme` (update if changed in `.env`)
-> - Use `docker compose` commands for Elasticsearch
+## 1. TLS / HTTPS Configuration
 
----
+TLS (Transport Layer Security) encrypts network communication, protecting credentials and data in transit.
 
-## 1. TLS / HTTPS (Concept Only – No HTTPS in Lab)
-
-TLS (Transport Layer Security) is used in real production systems to **encrypt network communication**. However, in this training environment, **only HTTP is used**, so TLS is explained **only as a concept**.
-
-### 1.1 What TLS Does (In Simple Words)
+### 1.1 What TLS Does
 
 * Encrypts data on the network
 * Protects usernames, passwords, and API keys
 * Prevents others from reading network traffic
+* Provides authentication between client and server
+
+### 1.2 When to Use HTTPS
+
+**Use HTTPS when:**
+* Data contains sensitive information
+* Communication happens over untrusted networks
+* Compliance requirements mandate encryption
+* Production environments
+
+**HTTP is acceptable when:**
+* Internal trusted networks only
+* Development/testing environments
+* Performance is critical and encryption overhead is a concern
 
 ---
 
-### 1.2 Training Environment Note
+### 1.3 Enable HTTPS in Elasticsearch
 
-In this course:
+**Step 1: Generate certificates (from within container)**
 
-* Elasticsearch runs on **HTTP**
-* Kibana runs on **HTTP**
-* Fluentd / Logstash send data using **HTTP**
-
-So:
-
-* **No certificates are created**
-* **No HTTPS configuration is done**
-* TLS is explained only for **theoretical understanding**
-
----
-
-### Conceptual Flow (Production vs Training)
-
+```bash
+docker compose exec elasticsearch bash
+bin/elasticsearch-certutil ca --out /usr/share/elasticsearch/config/ca.p12 --pass ""
+bin/elasticsearch-certutil cert --ca /usr/share/elasticsearch/config/ca.p12 --ca-pass "" --out /usr/share/elasticsearch/config/elastic-cert.p12 --pass ""
+exit
 ```
-Production:
-Client → HTTPS → Elasticsearch
 
-Training Lab:
-Client → HTTP → Elasticsearch
+**Command explanation:**
+* `docker compose exec elasticsearch bash`: Access Elasticsearch container shell
+* `elasticsearch-certutil`: Elasticsearch certificate generation utility
+* `ca`: Create Certificate Authority
+* `cert`: Create node certificate
+* `--out`: Output file path
+* `--pass ""`: No password protection (for simplicity)
+* **Purpose:** Generate self-signed certificates for HTTPS
+
+**Step 2: Update Elasticsearch config**
+
+Edit `elasticsearch/config/elasticsearch.yml`:
+
+```yaml
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.keystore.path: certs/elastic-cert.p12
+xpack.security.http.ssl.keystore.type: PKCS12
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.keystore.path: certs/elastic-cert.p12
+xpack.security.transport.ssl.keystore.type: PKCS12
 ```
 
+**Step 3: Restart and test**
+
+```bash
+docker compose restart elasticsearch
+curl -u elastic:changeme -k https://localhost:9200
+```
+
+**Command explanation:**
+* `-k`: Ignore certificate verification (for self-signed certs)
+* `https://`: Use HTTPS protocol
+* **Purpose:** Verify HTTPS is working
+
 ---
 
-## 2. API Keys for Secure Ingestion (Very Simple Hands‑On Using HTTP)
+## 2. API Keys for Secure Ingestion
 
-Even when HTTPS is not enabled, **API keys can still be used for authentication** in a training setup. This lab shows the **simplest possible API key usage over HTTP**.
-
----
+API keys provide an alternative to username/password authentication for programmatic access.
 
 ### 2.1 Why API Keys Are Used
 
-* Avoid storing usernames and passwords in scripts
-* Easy to create and revoke
-* Commonly used by ingestion tools
+**Advantages:**
+* **Security:** Avoid storing usernames and passwords in scripts or configuration files
+* **Flexibility:** Easy to create and revoke without changing user passwords
+* **Scope Control:** Can be restricted to specific indices or operations
+* **Expiration:** Can be set to expire automatically
+* **Common Usage:** Standard method for ingestion tools (Filebeat, Logstash, custom applications)
+
+**When to use API keys:**
+* Application-to-Elasticsearch communication
+* Automated scripts and tools
+* Third-party integrations
+* When you need temporary access
+
+**When to use username/password:**
+* Interactive user access
+* Kibana login
+* Administrative tasks
 
 ---
 
-## 2.2 Create a Simple API Key (HTTP)
+### 2.2 Create a Simple API Key
 
-Create one API key using the `elastic` user:
+**Method 1: Using curl (from host)**
+
+Create an API key using the `elastic` user:
 
 ```bash
-curl -u elastic -X POST "http://localhost:9200/_security/api_key" \
+curl -u elastic:changeme -X POST "http://localhost:9200/_security/api_key" \
   -H "Content-Type: application/json" \
-  -d '{ "name": "simple-training-key" }'
+  -d '{ "name": "my-api-key" }'
 ```
 
-From the response, note down:
+**Command explanation:**
+* `curl`: Command-line HTTP client
+* `-u elastic:changeme`: Basic authentication (username:password)
+* `-X POST`: HTTP POST method
+* `_security/api_key`: API endpoint for creating API keys
+* `-H "Content-Type: application/json"`: Set request header for JSON content
+* `-d '{ "name": "my-api-key" }'`: Request body with API key name
+* **Purpose:** Generate an API key for secure programmatic access
 
-* `id`
-* `api_key`
+**Response example:**
+```json
+{
+  "id": "VuaCfGcBCdbkQm-e5aOx",
+  "name": "my-api-key",
+  "api_key": "ui2lp2axTNmsyakw9tvNnw",
+  "encoded": "VuaCfGcBCdbkQm-e5aOx:ui2lp2axTNmsyakw9tvNnw"
+}
+```
+
+**Important:** Save the `id` and `api_key` values immediately. You cannot retrieve them later.
 
 ---
 
 ### 2.3 Encode the API Key
 
+API keys must be base64-encoded before use.
+
+**Method 1: Using echo and base64**
+
 ```bash
-echo -n '<id>:<api_key>' | base64
+echo -n 'VuaCfGcBCdbkQm-e5aOx:ui2lp2axTNmsyakw9tvNnw' | base64
 ```
 
-Copy the encoded value. It will be used in the next step.
 
----
+### 2.4 Create API Key with Expiration
 
-## 2.4 Send One Test Document Using API Key (HTTP)
-
-This is the **only hands‑on test** for API key usage in the training.
+API keys can be set to expire automatically:
 
 ```bash
-curl -u elastic:changeme -X POST "http://localhost:9200/api-demo/_doc" \
-  -H "Authorization: ApiKey <BASE64_ENCODED_KEY>" \
+curl -u elastic:changeme -X POST "http://localhost:9200/_security/api_key" \
   -H "Content-Type: application/json" \
-  -d '{ "message": "log sent using api key over http" }'
+  -d '{
+    "name": "temporary-key",
+    "expiration": "7d"
+  }'
 ```
 
 ---
 
-## 2.5 Verify the Inserted Document
+### 2.5 Use API Key for Authentication
+
+**Send document using API key:**
 
 ```bash
-curl -u elastic:changeme -X GET "http://localhost:9200/api-demo/_search?pretty"
+curl -X POST "http://localhost:9200/api-demo/_doc" \
+  -H "Authorization: ApiKey VnVhQ2ZHY0JDZGJrUW0tZTVhT3g6dWkybHAyYXhUTm1zeWFrdzl0dk5udw==" \
+  -H "Content-Type: application/json" \
+  -d '{ "message": "log sent using api key" }'
 ```
-
-You should see the test message in the output.
 
 ---
 
-## What Is Intentionally NOT Covered in Training
+### 2.6 Verify API Key Works
 
-To keep the workshop **simple and stable**, the following are **not included**:
+**Test API key authentication:**
 
-* Certificate generation
-* HTTPS configuration in Elasticsearch
-* HTTPS configuration in Kibana
-* Keystore and truststore
-* Mutual TLS
-* Advanced API key permissions
+```bash
+curl -H "Authorization: ApiKey VnVhQ2ZHY0JDZGJrUW0tZTVhT3g6dWkybHAyYXhUTm1zeWFrdzl0dk5udw==" \
+  http://localhost:9200
+```
 
-These topics belong to **production security hardening**, not classroom labs.
+---
+
+### 2.7 List and Manage API Keys
+
+**List all API keys:**
+
+```bash
+curl -u elastic:changeme -X GET "http://localhost:9200/_security/api_key?pretty"
+```
+
+**Revoke API key:**
+
+```bash
+curl -u elastic:changeme -X DELETE "http://localhost:9200/_security/api_key?id=VuaCfGcBCdbkQm-e5aOx"
+```
+
+### 2.8 Use API Key in Filebeat Configuration
+
+API keys are commonly used in Beats configuration:
+
+**Example Filebeat configuration:**
+
+```yaml
+output.elasticsearch:
+  hosts: ["http://localhost:9200"]
+  api_key: "VnVhQ2ZHY0JDZGJrUW0tZTVhT3g6dWkybHAyYXhUTm1zeWFrdzl0dk5udw=="
+```
+---
+
+## 3. Document-Level Security (DLS)
+
+Document-Level Security (DLS) restricts access to specific documents based on user attributes or document fields.
+
+### 3.1 What DLS Does
+
+DLS allows you to:
+* Filter documents based on user identity
+* Hide documents from users who shouldn't see them
+* Control access at the document level (not just index level)
+
+### 3.2 Simple DLS Example
+
+**Create role with DLS:**
+
+```bash
+curl -u elastic:changeme -X PUT "http://localhost:9200/_security/role/sales_team" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "indices": [
+      {
+        "names": ["sales-*"],
+        "privileges": ["read"],
+        "query": {
+          "term": {
+            "department": "{{_user.metadata.department}}"
+          }
+        }
+      }
+    ]
+  }'
+```
+
+**Command explanation:**
+* `PUT _security/role/sales_team`: Create or update role
+* `"query"`: Document-level security query
+* `"{{_user.metadata.department}}"`: User metadata variable
+* **Purpose:** Users can only see documents where `department` field matches their metadata
+* **How it works:** Elasticsearch automatically filters documents based on the query
+
+**Assign role to user:**
+
+```bash
+curl -u elastic:changeme -X POST "http://localhost:9200/_security/user/sales_user" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "password": "secure_password",
+    "roles": ["sales_team"],
+    "metadata": {
+      "department": "sales"
+    }
+  }'
+```
+
+---
+
+## 4. Field-Level Security (FLS)
+
+Field-Level Security (FLS) restricts access to specific fields within documents.
+
+### 4.1 What FLS Does
+
+FLS allows you to:
+* Hide sensitive fields from users
+* Show only specific fields
+* Control field visibility based on user roles
+
+### 4.2 Simple FLS Example
+
+**Create role with FLS:**
+
+```bash
+curl -u elastic:changeme -X PUT "http://localhost:9200/_security/role/analyst" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "indices": [
+      {
+        "names": ["logs-*"],
+        "privileges": ["read"],
+        "field_security": {
+          "grant": ["message", "timestamp", "level"],
+          "except": ["password", "ssn", "credit_card"]
+        }
+      }
+    ]
+  }'
+```
+
+**Command explanation:**
+* `"field_security"`: Define field-level access control
+* `"grant"`: Fields users can see
+* `"except"`: Fields to hide (even if in grant list)
+* **Purpose:** Users can see `message`, `timestamp`, `level` but not `password`, `ssn`, `credit_card`
+
+**Grant all fields except specific ones:**
+
+```bash
+curl -u elastic:changeme -X PUT "http://localhost:9200/_security/role/restricted_reader" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "indices": [
+      {
+        "names": ["logs-*"],
+        "privileges": ["read"],
+        "field_security": {
+          "grant": ["*"],
+          "except": ["password", "ssn"]
+        }
+      }
+    ]
+  }'
+```
+
+---
+
+## 5. Security Settings in Configuration Files
+
+### 5.1 Elasticsearch Security Settings
+
+**File location:** `elasticsearch/config/elasticsearch.yml`
+
+**Key security settings:**
+
+```yaml
+## Security
+xpack.security.enabled: true
+xpack.security.enrollment.enabled: true
+
+## API Key Settings
+xpack.security.authc.api_key.enabled: true
+xpack.security.authc.api_key.cache.ttl: 1h
+xpack.security.authc.api_key.cache.max_keys: 10000
+
+## Audit Logging
+xpack.security.audit.enabled: false
+xpack.security.audit.logfile.events.include: ["access_denied", "authentication_failed"]
+```
+
+**Settings explanation:**
+
+* `xpack.security.enabled: true`
+  * **Purpose:** Enable X-Pack security features
+  * **Required:** Must be `true` for authentication
+
+* `xpack.security.authc.api_key.enabled: true`
+  * **Purpose:** Enable API key authentication
+  * **Default:** `true` (enabled by default)
+
+* `xpack.security.authc.api_key.cache.ttl: 1h`
+  * **Purpose:** How long API keys are cached in memory
+  * **Default:** `1h` (1 hour)
+  * **Note:** Longer TTL improves performance but uses more memory
+
+* `xpack.security.authc.api_key.cache.max_keys: 10000`
+  * **Purpose:** Maximum number of API keys to cache
+  * **Default:** `10000`
+  * **Note:** Adjust based on number of active API keys
+
+* `xpack.security.audit.enabled: false`
+  * **Purpose:** Enable security audit logging
+  * **Values:** `true` or `false`
+  * **Note:** Enable in production to track security events
+
+* `xpack.security.audit.logfile.events.include: [...]`
+  * **Purpose:** Which security events to log
+  * **Options:** `access_denied`, `authentication_failed`, `authentication_success`, `access_granted`
+  * **Purpose:** Track failed login attempts and access denials
+
+---
+
+### 5.2 View Security Settings
+
+**Check current security settings:**
+
+```bash
+curl -u elastic:changeme -X GET "http://localhost:9200/_cluster/settings?include_defaults=true&filter_path=**.security&pretty"
+```
+
+**Command explanation:**
+* `_cluster/settings`: Cluster settings API
+* `include_defaults=true`: Include default values
+* `filter_path=**.security`: Filter to show only security-related settings
+* `?pretty`: Format JSON output
+* **Purpose:** View all security-related configuration
+
+---
+
+## 6. Security Best Practices
+
+### 6.1 API Key Best Practices
+
+* **Use restricted API keys:** Grant only necessary permissions
+* **Set expiration:** Use expiration for temporary access
+* **Rotate regularly:** Revoke and recreate API keys periodically
+* **Store securely:** Keep API keys in secure storage (not in code repositories)
+* **Monitor usage:** Regularly review API key usage and revoke unused ones
+
+### 6.2 General Security Best Practices
+
+* **Enable HTTPS:** Use TLS/SSL in production
+* **Strong passwords:** Use complex passwords for all users
+* **Principle of least privilege:** Grant minimum required permissions
+* **Regular audits:** Review user access and permissions regularly
+* **Enable audit logging:** Track security events in production
+
+---
+
+## 7. Troubleshooting
+
+### 7.1 API Key Issues
+
+**Problem: API key authentication fails**
+
+```bash
+# Test API key
+curl -H "Authorization: ApiKey <BASE64_KEY>" http://localhost:9200
+
+# Check API key details
+curl -u elastic:changeme -X GET "http://localhost:9200/_security/api_key?id=<KEY_ID>&pretty"
+```
+
+**Common issues:**
+* API key expired → Create new API key
+* API key revoked → Check if key was deleted
+* Incorrect encoding → Verify base64 encoding
+* Wrong format → Ensure format is `ApiKey <base64_encoded_id:key>`
+
+### 7.2 DLS/FLS Issues
+
+**Problem: Users can't see expected documents/fields**
+
+```bash
+# Check user's roles
+curl -u elastic:changeme -X GET "http://localhost:9200/_security/user/<username>?pretty"
+
+# Check role definition
+curl -u elastic:changeme -X GET "http://localhost:9200/_security/role/<role_name>?pretty"
+```
+
+**Common issues:**
+* DLS query too restrictive → Review query logic
+* Missing user metadata → Ensure user has required metadata
+* Field names don't match → Verify field names in documents
 
 ---
 
 ## Verification Commands
 
-Check Elasticsearch service (from docker-elk directory):
+**Check Elasticsearch service:**
 
 ```bash
 docker compose ps elasticsearch
 ```
 
-Test API key authentication over HTTP:
+**Command explanation:**
+* `ps`: List running containers
+* **Purpose:** Verify Elasticsearch is running
+
+**Test API key authentication:**
 
 ```bash
 curl -H "Authorization: ApiKey <BASE64_ENCODED_KEY>" http://localhost:9200
-# Note: This command is correct as-is (uses API key authentication)
 ```
+
+**List all API keys:**
+
+```bash
+curl -u elastic:changeme -X GET "http://localhost:9200/_security/api_key?pretty"
+```
+
+**Check cluster security status:**
+
+```bash
+curl -u elastic:changeme http://localhost:9200/_security/_authenticate?pretty
+```
+
+**Command explanation:**
+* `_security/_authenticate`: Authenticate current user
+* **Purpose:** Verify authentication is working and see current user details
 
 ---
